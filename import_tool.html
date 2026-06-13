@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ai足势 - 数据导入工具</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0a0e17 0%, #1a1f2e 100%); color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.container { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 40px; max-width: 500px; width: 100%; text-align: center; }
+h1 { font-size: 28px; margin-bottom: 10px; }
+.subtitle { color: #888; margin-bottom: 30px; }
+.btn { background: linear-gradient(135deg, #10b981, #3b82f6); color: #fff; border: none; padding: 14px 32px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 100%; margin: 8px 0; transition: transform 0.2s; }
+.btn:hover { transform: scale(1.02); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary { background: rgba(255,255,255,0.1); }
+.status { margin-top: 20px; padding: 15px; border-radius: 10px; display: none; }
+.status.success { display: block; background: rgba(16,185,129,0.2); border: 1px solid #10b981; }
+.status.error { display: block; background: rgba(239,68,68,0.2); border: 1px solid #ef4444; }
+.status.info { display: block; background: rgba(59,130,246,0.2); border: 1px solid #3b82f6; }
+.log { text-align: left; margin-top: 15px; font-size: 14px; max-height: 300px; overflow-y: auto; }
+.log-item { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.log-item.ok { color: #10b981; }
+.log-item.err { color: #ef4444; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>⚽ Ai足势</h1>
+  <p class="subtitle">数据导入工具</p>
+
+  <div id="step1">
+    <p style="margin-bottom:20px; color:#ccc;">点击按钮，一键导入示例赛事数据和管理员账号</p>
+    <button class="btn" onclick="importData()">🚀 开始导入数据</button>
+  </div>
+
+  <div id="status" class="status"></div>
+  <div id="log" class="log"></div>
+
+  <div id="step2" style="display:none; margin-top:20px;">
+    <button class="btn btn-secondary" onclick="window.location.href='https://bb9888lihua-ops.github.io/ai-football-predict/'">🌐 打开网站</button>
+    <button class="btn btn-secondary" onclick="window.location.href='https://bb9888lihua-ops.github.io/ai-football-predict/admin.html'">🔧 打开后台</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBhdsbfYbVPi-CQ1XiFn6EED7jRzGiQPbg",
+  authDomain: "ai-football-predict-2102b.firebaseapp.com",
+  projectId: "ai-football-predict-2102b",
+  storageBucket: "ai-football-predict-2102b.firebasestorage.app",
+  messagingSenderId: "450962408798",
+  appId: "1:450962408798:web:769a6946a4fb3907eefbcf",
+  measurementId: "G-SXE4X75YWN"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const matches = [
+  {"id":"match_20260615_001","league":"英超","leagueIcon":"🏴󠁧󠁥󠁮󠁧󠁿","time":"2026-06-15 21:00","date":"2026-06-15","homeTeam":"曼联","homeTeamLogo":"🔴","awayTeam":"利物浦","awayTeamLogo":"🔵","locked":true,"confidence":68,"recommend":"大球 2.5","expectedGoals":"3.12","handicap":"2.5","analysis":"曼联主场进攻活跃，近5场场均进球2.1个。利物浦客场防守有漏洞，近3个客场失球5个。模型预测总进球3.12个，推荐大球2.5。","ended":false,"live":false},
+  {"id":"match_20260615_002","league":"西甲","leagueIcon":"🇪🇸","time":"2026-06-15 23:00","date":"2026-06-15","homeTeam":"巴塞罗那","homeTeamLogo":"🔴","awayTeam":"皇家马德里","awayTeamLogo":"⚪","locked":true,"confidence":72,"recommend":"大球 2.5","expectedGoals":"3.45","handicap":"2.5","analysis":"国家德比，双方进攻火力强劲。巴萨主场近10场场均进球2.8个，皇马客场场均进球2.3个。模型预期总进球3.45个，推荐大球2.5。","ended":false,"live":false},
+  {"id":"match_20260616_001","league":"德甲","leagueIcon":"🇩🇪","time":"2026-06-16 21:30","date":"2026-06-16","homeTeam":"拜仁慕尼黑","homeTeamLogo":"🔴","awayTeam":"多特蒙德","awayTeamLogo":"🟡","locked":true,"confidence":75,"recommend":"大球 3.5","expectedGoals":"4.21","handicap":"3.5","analysis":"德国国家德比，拜仁主场攻击力惊人，近5场主场场均进球3.2个。多特蒙德客场防守不稳，近3个客场失球6个。模型预测总进球4.21个，推荐大球3.5。","ended":false,"live":false},
+  {"id":"match_20260616_002","league":"意甲","leagueIcon":"🇮","time":"2026-06-16 23:00","date":"2026-06-16","homeTeam":"国际米兰","homeTeamLogo":"⚫","awayTeam":"AC米兰","awayTeamLogo":"🔴⚫","locked":true,"confidence":65,"recommend":"小球 2.5","expectedGoals":"2.18","handicap":"2.5","analysis":"米兰德比，双方防守都比较稳健。国米主场近5场场均失球仅0.8个，AC米兰客场场均进球1.3个。模型预测总进球2.18个，推荐小球2.5。","ended":false,"live":false},
+  {"id":"match_20260617_001","league":"法甲","leagueIcon":"🇫🇷","time":"2026-06-17 22:00","date":"2026-06-17","homeTeam":"巴黎圣日耳曼","homeTeamLogo":"🔵🔴","awayTeam":"马赛","awayTeamLogo":"⚪🔵","locked":true,"confidence":78,"recommend":"大球 3.5","expectedGoals":"4.56","handicap":"3.5","analysis":"法国国家德比，PSG主场攻击力恐怖，近10场主场场均进球3.8个。马赛客场防守漏洞明显，近5个客场失球12个。模型预测总进球4.56个，强烈推荐大球3.5。","ended":false,"live":false},
+  {"id":"match_20260617_002","league":"欧冠","leagueIcon":"🏆","time":"2026-06-17 03:00","date":"2026-06-17","homeTeam":"曼城","homeTeamLogo":"🔵","awayTeam":"皇马","awayTeamLogo":"⚪","locked":true,"confidence":70,"recommend":"大球 2.5","expectedGoals":"3.28","handicap":"2.5","analysis":"欧冠焦点战，曼城主场控球能力强，近5场欧冠主场场均进球2.5个。皇马客场经验丰富，但防守端有隐患。模型预测总进球3.28个，推荐大球2.5。","ended":false,"live":false}
+];
+
+function log(msg, type='info') {
+  const el = document.getElementById('log');
+  const item = document.createElement('div');
+  item.className = 'log-item ' + type;
+  item.textContent = msg;
+  el.appendChild(item);
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.className = 'status ' + type;
+  el.textContent = msg;
+}
+
+async function importData() {
+  document.getElementById('step1').style.display = 'none';
+  showStatus('正在连接数据库...', 'info');
+
+  try {
+    // 导入赛事
+    for (const match of matches) {
+      await db.collection('matches').doc(match.id).set(match);
+      log(`✅ ${match.homeTeam} vs ${match.awayTeam}`, 'ok');
+    }
+    log(`📊 共导入 ${matches.length} 场赛事`, 'ok');
+
+    // 创建管理员
+    const crypto = await import('https://esm.sh/crypto-js@4.2.0');
+    // 简单SHA256
+    async function sha256(text) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(text);
+      const hash = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    const passwordHash = await sha256('admin888' + 'ai_football_salt');
+    await db.collection('admins').doc('admin').set({
+      username: 'admin',
+      password: passwordHash,
+      role: 'admin',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    log('✅ 管理员账号 admin/admin888 已创建', 'ok');
+
+    // 创建默认设置
+    await db.collection('settings').doc('config').set({
+      diamondPerRegister: 8,
+      diamondPerCheckin: 1,
+      diamondPerUnlock: 1,
+      getDiamondUrl: ''
+    });
+    log('✅ 默认设置已创建', 'ok');
+
+    showStatus('🎉 数据导入完成！', 'success');
+    document.getElementById('step2').style.display = 'block';
+
+  } catch (e) {
+    log('❌ 错误: ' + e.message, 'err');
+    showStatus('导入失败，请检查 Firestore 是否已启用', 'error');
+    document.getElementById('step1').style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>
