@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ai足势 - AI足球预测分析平台</title>
+<meta name="description" content="Ai足势 - 专业足球赛事AI预测分析平台，基于Dixon-Coles泊松分布模型">
+<meta name="theme-color" content="#0a0e17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ai足势">
+<meta name="og:title" content="Ai足势 - AI足球预测分析平台">
+<meta name="og:description" content="基于Dixon-Coles泊松分布模型的专业足球大小球预测">
+<meta name="og:type" content="website">
+<meta name="og:url" content="https://ai-football-predict.web.app">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www/svg/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:linear-gradient(135deg,#0a0e17 0%,#1a1f2e 100%);color:#e8eaf0;min-height:100vh;overflow-x:hidden}
+
+/* Toast提示 */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:#1e293b;color:#e8eaf0;padding:12px 24px;border-radius:12px;font-size:14px;z-index:10000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:#10b981}
+.toast.error{background:#ef4444}
+.toast.info{background:#3b82f6}
+
+/* 认证页 */
+.auth-page{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-box{background:linear-gradient(145deg,#141929,#0f1422);border:1px solid #1e2a4a;border-radius:20px;padding:40px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.auth-header{text-align:center;margin-bottom:30px}
+.auth-header .logo{font-size:60px;margin-bottom:10px}
+.auth-header h2{font-size:28px;background:linear-gradient(135deg,#10b981,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.auth-header p{color:#7a8bb5;font-size:14px}
+.auth-tabs{display:flex;gap:10px;margin-bottom:24px;background:#0a0e17;border-radius:12px;padding:4px}
+.auth-tab{flex:1;padding:12px;text-align:center;border-radius:10px;cursor:pointer;color:#7a8bb5;font-size:14px;transition:all 0.3s}
+.auth-tab.active{background:linear-gradient(135deg,#10b981,#3b82f6);color:#fff}
+.auth-form{display:none}
+.auth-form.active{display:block}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;color:#7a8bb5;margin-bottom:6px}
+.form-input{width:100%;background:#0a0e17;border:1px solid #1e2a4a;border-radius:10px;padding:12px 16px;color:#e8eaf0;font-size:14px;transition:border-color 0.3s}
+.form-input:focus{outline:none;border-color:#10b981}
+.form-error{color:#ef4444;font-size:12px;margin-bottom:12px;display:none}
+.form-error.show{display:block}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.3s}
+.btn-primary{background:linear-gradient(135deg,#10b981,#3b82f6);color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(16,185,129,0.3)}
+.form-footer{text-align:center;margin-top:16px;font-size:13px;color:#7a8bb5}
+.form-footer a{color:#10b981;cursor:pointer}
+.pwd-tips{text-align:center;margin-top:12px;font-size:11px;color:#4a5578}
+
+/* 顶部导航 */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(10,14,23,0.95);backdrop-filter:blur(10px);border-bottom:1px solid #1e2a4a;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.logo-small{font-size:24px}
+.topbar-left .title{font-size:18px;font-weight:700;background:linear-gradient(135deg,#10b981,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.btn-checkin{background:#1e2a4a;color:#7a8bb5;border:none;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;transition:all 0.3s}
+.btn-checkin.active{background:linear-gradient(135deg,#10b981,#3b82f6);color:#fff}
+.btn-addcoin{background:#fbbf24;color:#0a0e17;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
+.coin-display{display:flex;align-items:center;gap:6px;background:#1e2a4a;padding:8px 12px;border-radius:8px}
+.coin-icon{font-size:16px}
+.coin-num{font-size:14px;font-weight:600;color:#fbbf24}
+.coin-label{font-size:11px;color:#7a8bb5}
+.user-info{display:flex;align-items:center;gap:8px}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#10b981,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600}
+.user-name{font-size:13px;color:#e8eaf0}
+.btn-logout{background:#ef4444;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer}
+.hide{display:none!important}
+
+/* 头部 */
+.header{text-align:center;padding:40px 20px 20px}
+.header h1{font-size:36px;background:linear-gradient(135deg,#10b981,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.header .date{font-size:14px;color:#7a8bb5;margin-bottom:4px}
+.header .update{font-size:12px;color:#4a5578}
+
+/* 容器 */
+.container{max-width:800px;margin:0 auto;padding:20px}
+
+/* 赛事卡片 */
+.match-card{background:linear-gradient(145deg,#141929,#0f1422);border:1px solid #1e2a4a;border-radius:16px;padding:20px;margin-bottom:16px;transition:all 0.3s}
+.match-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.3)}
+.match-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.match-league{display:flex;align-items:center;gap:8px}
+.league-icon{font-size:20px}
+.league-name{font-size:13px;color:#7a8bb5}
+.match-time{font-size:12px;color:#4a5578}
+.match-status{font-size:11px;padding:4px 10px;border-radius:6px;background:#1e2a4a;color:#7a8bb5}
+.match-status.live{background:#ef4444;color:#fff;animation:pulse 2s infinite}
+.match-status.ended{background:#6b7280;color:#fff}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+.match-teams{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.team{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
+.team-logo{width:48px;height:48px;border-radius:50%;background:#1e2a4a;display:flex;align-items:center;justify-content:center;font-size:24px}
+.team-logo img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.team-name{font-size:14px;font-weight:600;text-align:center}
+.vs-text{font-size:20px;font-weight:700;color:#4a5578}
+
+.match-prediction{background:#0a0e17;border-radius:12px;padding:16px;margin-bottom:12px}
+.prediction-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.prediction-title{font-size:13px;color:#7a8bb5}
+.prediction-confidence{font-size:12px;padding:4px 10px;border-radius:6px;background:linear-gradient(135deg,#10b981,#3b82f6);color:#fff;font-weight:600}
+.prediction-content{display:flex;justify-content:space-around;text-align:center}
+.prediction-item{flex:1}
+.prediction-label{font-size:11px;color:#4a5578;margin-bottom:4px}
+.prediction-value{font-size:18px;font-weight:700;color:#10b981}
+.prediction-value.blue{color:#3b82f6}
+
+.match-analysis{background:#0a0e17;border-radius:12px;padding:16px}
+.analysis-title{font-size:13px;color:#7a8bb5;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.analysis-text{font-size:13px;color:#e8eaf0;line-height:1.6}
+.analysis-locked{text-align:center;padding:20px}
+.lock-icon{font-size:32px;margin-bottom:8px}
+.lock-text{font-size:13px;color:#7a8bb5;margin-bottom:12px}
+.btn-unlock{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#0a0e17;border:none;padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+
+/* 汇总卡片 */
+.summary-card{background:linear-gradient(145deg,#141929,#0f1422);border:1px solid #1e2a4a;border-radius:16px;padding:20px;margin-top:24px}
+.summary-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.summary-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat-item{text-align:center}
+.stat-value{font-size:24px;font-weight:700;background:linear-gradient(135deg,#10b981,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:11px;color:#7a8bb5;margin-top:4px}
+
+/* 页脚 */
+.footer{text-align:center;padding:40px 20px;color:#4a5578;font-size:12px}
+.footer a{color:#10b981;text-decoration:none}
+
+/* 客服浮窗 */
+.chat-fab{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#10b981,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(16,185,129,0.4);z-index:1000}
+.chat-popup{position:fixed;bottom:90px;right:20px;width:320px;height:400px;background:#141929;border:1px solid #1e2a4a;border-radius:16px;display:flex;flex-direction:column;z-index:1000;box-shadow:0 10px 40px rgba(0,0,0,0.5)}
+.chat-head{padding:16px;border-bottom:1px solid #1e2a4a;display:flex;justify-content:space-between;align-items:center}
+.chat-head h3{font-size:14px;margin:0}
+.chat-head .close{cursor:pointer;color:#7a8bb5}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px}
+.chat-quick{padding:12px;border-top:1px solid #1e2a4a;display:flex;gap:8px;flex-wrap:wrap}
+.chat-quick button{background:#1e2a4a;border:none;color:#7a8bb5;padding:6px 12px;border-radius:6px;font-size:11px;cursor:pointer}
+.chat-input-row{padding:12px;border-top:1px solid #1e2a4a;display:flex;gap:8px}
+.chat-input-row input{flex:1;background:#0a0e17;border:1px solid #1e2a4a;border-radius:8px;padding:8px 12px;color:#e8eaf0;font-size:13px}
+.chat-input-row button{background:#10b981;border:none;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer}
+.badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center}
+
+/* 无赛事 */
+.no-matches{text-align:center;padding:60px 20px;color:#4a5578}
+.no-matches-icon{font-size:64px;margin-bottom:16px;opacity:0.5}
+.no-matches-text{font-size:14px}
+
+/* 响应式 */
+@media(max-width:640px){
+  .topbar{flex-direction:column;gap:12px}
+  .topbar-right{flex-wrap:wrap;justify-content:center}
+  .header h1{font-size:28px}
+  .summary-stats{grid-template-columns:1fr}
+  .chat-popup{width:calc(100% - 40px);right:20px;left:20px}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- 认证页 -->
+<div class="auth-page" id="authPage" style="display: flex;">
+<div class="auth-box">
+<div class="auth-header">
+<div class="logo">⚽</div>
+<h2>Ai足势</h2>
+<p>AI预测引擎 · Dixon-Coles泊松分布模型</p>
+</div>
+<div class="auth-body">
+<div class="auth-tabs">
+<div class="auth-tab active" onclick="switchTab('login')">登录</div>
+<div class="auth-tab" onclick="switchTab('register')">注册</div>
+</div>
+<div class="auth-form active" id="loginForm">
+<div class="form-group"><label>账号</label><input class="form-input" id="loginUser" type="text" placeholder="用户名 / 手机号"></div>
+<div class="form-group"><label>密码</label><input class="form-input" id="loginPwd" type="password" placeholder="输入密码"></div>
+<div class="form-error" id="loginErr"></div>
+<button class="btn btn-primary" onclick="doLogin()">登 录</button>
+<div class="form-footer">还没有账号？<a onclick="switchTab('register')">立即注册</a></div>
+</div>
+<div class="auth-form" id="registerForm">
+<div class="form-group"><label>用户名</label><input class="form-input" id="regUser" type="text" placeholder="4-16位字母/数字"></div>
+<div class="form-group"><label>手机号</label><input class="form-input" id="regPhone" type="tel" placeholder="11位手机号"></div>
+<div class="form-group"><label>密码</label><input class="form-input" id="regPwd" type="password" placeholder="6-20位密码"></div>
+<div class="form-group"><label>确认密码</label><input class="form-input" id="regPwd2" type="password" placeholder="再次输入密码"></div>
+<div class="form-error" id="regErr"></div>
+<button class="btn btn-primary" onclick="doRegister()">注 册</button>
+<div class="form-footer">已有账号？<a onclick="switchTab('login')">去登录</a></div>
+<div class="pwd-tips">注册即送8钻石 · 每日签到+1 · 查看分析消耗1钻石</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 主看板 -->
+<div id="dashPage" style="display:none">
+<div class="topbar">
+<div class="topbar-left"><span class="logo-small">⚽</span><span class="title">Ai足势</span></div>
+<div class="topbar-right">
+<button class="btn-checkin active" id="checkinBtn" onclick="doCheckIn()">📅 签到+1</button>
+<button class="btn-addcoin hide" id="addcoinBtn" onclick="goAddCoin()">💎 获取钻石</button>
+<div class="coin-display"><span class="coin-icon">💎</span><span class="coin-num" id="coinNum">0</span><span class="coin-label">钻石</span></div>
+<div class="user-info"><div class="user-avatar" id="avatarLetter">U</div><span class="user-name" id="displayUser">用户</span></div>
+<button class="btn-logout" onclick="doLogout()">退出</button>
+</div>
+</div>
+<div class="header">
+<h1>Ai足势</h1>
+<div class="date" id="headerDate">加载中...</div>
+<div class="update">Dixon-Coles泊松分布模型 · 数据驱动分析</div>
+</div>
+<div class="container">
+<div id="matchCards"></div>
+<div id="summaryCard"></div>
+<div class="footer">Ai足势 · AI足球预测引擎<br><a href="javascript:location.reload()">刷新页面</a></div>
+</div>
+</div>
+
+<!-- 客服聊天浮窗 -->
+<div class="chat-fab" id="chatFab" onclick="toggleChat()" style="display: flex;">💬<span class="badge hide" id="chatBadge"></span></div>
+<div class="chat-popup hide" id="chatPopup">
+<div class="chat-head"><h3>💬 在线客服</h3><span class="close" onclick="toggleChat()">✕</span></div>
+<div class="chat-msgs" id="chatMsgs"></div>
+<div class="chat-quick">
+<button onclick="sendQuick('钻石获取')">💎 钻石获取</button>
+<button onclick="sendQuick('每日签到')">✅ 每日签到</button>
+<button onclick="sendQuick('解锁赛事')">🔓 解锁赛事</button>
+</div>
+<div class="chat-input-row"><input id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChat()"><button onclick="sendChat()">发送</button></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ===== Firebase 配置 =====
+const firebaseConfig = {
+  apiKey: "AIzaSyBtrVl6W78M-rWFlkxqdXY9RBoaUp-GGrI",
+  authDomain: "ai-football-predict.firebaseapp.com",
+  projectId: "ai-football-predict",
+  storageBucket: "ai-football-predict.firebasestorage.app",
+  messagingSenderId: "241292414990",
+  appId: "1:241292414990:web:d0a745c1d3564c25d74cd5"
+};
+
+let db = null, fbReady = false;
+function initFirebase(){
+  try{
+    if(!firebaseConfig.apiKey||firebaseConfig.apiKey===""){return false}
+    firebase.initializeApp(firebaseConfig);
+    db=firebase.firestore();
+    fbReady=true;
+    return true;
+  }catch(e){console.error('Firebase初始化失败:',e);return false}
+}
+
+const SESSION_KEY='football_session',ADMIN_USER='admin',ADMIN_PWD='admin888';
+const INIT_COINS=8,UNLOCK_COST=1,CHECKIN_REWARD=1;
+
+// ===== 工具函数 =====
+function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY))}catch{return null}}
+function saveSession(s){localStorage.setItem(SESSION_KEY,JSON.stringify(s))}
+function clearSession(){localStorage.removeItem(SESSION_KEY)}
+function fmtDate(ts){if(!ts)return'-';const d=new Date(ts);return(d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')}
+function fmtFull(ts){if(!ts)return'-';const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.className='toast',2500)}
+function switchTab(tab){document.querySelectorAll('.auth-tab').forEach((el,i)=>{el.classList.toggle('active',(tab==='login'&&i===0)||(tab==='register'&&i===1))});document.getElementById('loginForm').classList.toggle('active',tab==='login');document.getElementById('registerForm').classList.toggle('active',tab==='register');document.getElementById('loginErr').classList.remove('show');document.getElementById('regErr').classList.remove('show')}
+function showPage(p){document.getElementById('authPage').style.display=p==='auth'?'flex':'none';document.getElementById('dashPage').style.display=p==='dash'?'block':'none'}
+
+// ===== 密码哈希 =====
+async function hashPwd(pwd){
+  const encoded=new TextEncoder().encode(pwd+'__football_salt_2026__');
+  const hashBuffer=await crypto.subtle.digest('SHA-256',encoded);
+  return Array.from(new Uint8Array(hashBuffer)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ===== Firestore 操作 =====
+async function fbGetUser(username){if(!fbReady)return null;const doc=await db.collection('users').doc(username).get();return doc.exists?{name:doc.id,...doc.data()}:null}
+async function fbSaveUser(username,data){if(!fbReady)return;await db.collection('users').doc(username).set(data)}
+async function fbUpdateUser(username,updates){if(!fbReady)return;await db.collection('users').doc(username).update(updates)}
+
+async function fbCheckUserExists(username,phone){
+  if(!fbReady)return{userExists:false,phoneExists:false};
+  const userDoc=await db.collection('users').doc(username).get();
+  if(userDoc.exists)return{userExists:true,phoneExists:false};
+  const phoneQuery=await db.collection('users').where('phone','==',phone).get();
+  if(!phoneQuery.empty)return{userExists:false,phoneExists:true};
+  return{userExists:false,phoneExists:false}
+}
+
+// ===== 注册 =====
+async function doRegister(){
+  const user=document.getElementById('regUser').value.trim(),phone=document.getElementById('regPhone').value.trim(),pwd=document.getElementById('regPwd').value,pwd2=document.getElementById('regPwd2').value,errEl=document.getElementById('regErr');
+  if(!user||user.length<4||user.length>16){errEl.textContent='用户名需4-16位';errEl.classList.add('show');return}
+  if(!/^1\d{10}$/.test(phone)){errEl.textContent='手机号格式不正确';errEl.classList.add('show');return}
+  if(pwd.length<6||pwd.length>20){errEl.textContent='密码需6-20位';errEl.classList.add('show');return}
+  if(pwd!==pwd2){errEl.textContent='两次密码不一致';errEl.classList.add('show');return}
+  try{
+    const check=await fbCheckUserExists(user,phone);
+    if(check.userExists){errEl.textContent='用户名已存在';errEl.classList.add('show');return}
+    if(check.phoneExists){errEl.textContent='手机号已注册';errEl.classList.add('show');return}
+    const hashedPwd=await hashPwd(pwd);
+    const userData={pwd:hashedPwd,phone,coins:INIT_COINS,permanentCoins:0,totalEarned:INIT_COINS,totalSpent:0,unlocked:[],history:[{type:'earn',desc:'注册赠送',amount:INIT_COINS,time:Date.now()}],lastCheckIn:'',createdAt:Date.now()};
+    await fbSaveUser(user,userData);
+    showToast('注册成功！赠送'+INIT_COINS+'钻石 💎','success');
+    const session={user,coins:INIT_COINS,unlocked:[]};saveSession(session);
+    setTimeout(()=>enterDashboard(session),500);
+  }catch(e){console.error('注册失败:',e);errEl.textContent='注册失败，请重试';errEl.classList.add('show')}
+}
+
+// ===== 登录 =====
+async function doLogin(){
+  const user=document.getElementById('loginUser').value.trim(),pwd=document.getElementById('loginPwd').value,errEl=document.getElementById('loginErr');
+  if(!user||!pwd){errEl.textContent='请输入账号和密码';errEl.classList.add('show');return}
+  if(user===ADMIN_USER&&pwd===ADMIN_PWD){saveSession({user:ADMIN_USER,isAdmin:true});enterDashboard({user:ADMIN_USER,isAdmin:true});return}
+  try{
+    const u=await fbGetUser(user);
+    if(!u){errEl.textContent='用户不存在';errEl.classList.add('show');return}
+    const hashedPwd=await hashPwd(pwd);
+    if(u.pwd!==hashedPwd){errEl.textContent='密码错误';errEl.classList.add('show');return}
+    const session={user,coins:u.coins,unlocked:u.unlocked||[]};saveSession(session);
+    showToast('登录成功！','success');
+    setTimeout(()=>enterDashboard(session),500);
+  }catch(e){console.error('登录失败:',e);errEl.textContent='登录失败，请重试';errEl.classList.add('show')}
+}
+
+// ===== 进入主界面 =====
+async function enterDashboard(session){
+  showPage('dash');
+  document.getElementById('displayUser').textContent=session.user;
+  document.getElementById('avatarLetter').textContent=session.user.charAt(0).toUpperCase();
+  document.getElementById('coinNum').textContent=session.coins;
+  document.getElementById('headerDate').textContent=new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+
+  if(session.user!==ADMIN_USER){
+    const u=await fbGetUser(session.user);
+    if(u){
+      if(u.lastCheckIn!==todayStr()){
+        document.getElementById('checkinBtn').classList.add('active');
+        document.getElementById('checkinBtn').textContent='📅 签到+1';
+      }else{
+        document.getElementById('checkinBtn').classList.remove('active');
+        document.getElementById('checkinBtn').textContent='✅ 已签到';
+      }
+    }
+  }
+
+  loadMatches();
+}
+
+// ===== 签到 =====
+async function doCheckIn(){
+  const session=getSession();
+  if(!session||session.user===ADMIN_USER)return;
+  const btn=document.getElementById('checkinBtn');
+  if(!btn.classList.contains('active')){showToast('今天已经签到过了','info');return}
+  try{
+    const u=await fbGetUser(session.user);
+    if(u.lastCheckIn===todayStr()){showToast('今天已经签到过了','info');btn.classList.remove('active');btn.textContent='✅ 已签到';return}
+    const newCoins=u.coins+CHECKIN_REWARD;
+    const newTotalEarned=(u.totalEarned||0)+CHECKIN_REWARD;
+    await fbUpdateUser(session.user,{coins:newCoins,totalEarned:newTotalEarned,lastCheckIn:todayStr(),history:firebase.firestore.FieldValue.arrayUnion({type:'earn',desc:'每日签到',amount:CHECKIN_REWARD,time:Date.now()})});
+    session.coins=newCoins;saveSession(session);
+    document.getElementById('coinNum').textContent=newCoins;
+    btn.classList.remove('active');btn.textContent='✅ 已签到';
+    showToast('签到成功！+'+CHECKIN_REWARD+'钻石','success');
+  }catch(e){console.error('签到失败:',e);showToast('签到失败','error')}
+}
+
+// ===== 加载赛事 =====
+async function loadMatches(){
+  if(!fbReady){document.getElementById('matchCards').innerHTML='<div class="no-matches"><div class="no-matches-icon">⚽</div><div class="no-matches-text">数据库未配置</div></div>';return}
+  try{
+    const snapshot=await db.collection('matches').orderBy('time','asc').get();
+    if(snapshot.empty){document.getElementById('matchCards').innerHTML='<div class="no-matches"><div class="no-matches-icon">⚽</div><div class="no-matches-text">暂无赛事数据<br>请等待系统自动更新</div></div>';return}
+    const matches=[];snapshot.forEach(doc=>matches.push({id:doc.id,...doc.data()}));
+    renderMatches(matches);
+    renderSummary(matches);
+  }catch(e){console.error('加载赛事失败:',e);document.getElementById('matchCards').innerHTML='<div class="no-matches"><div class="no-matches-icon">⚠️</div><div class="no-matches-text">加载失败</div></div>'}
+}
+
+function renderMatches(matches){
+  const session=getSession();
+  const container=document.getElementById('matchCards');
+  container.innerHTML=matches.map(m=>{
+    const isUnlocked=session.unlocked&&session.unlocked.includes(m.id);
+    const isLocked=m.locked&&!isUnlocked;
+    const statusClass=m.ended?'ended':(m.live?'live':'');
+    const statusText=m.ended?'已结束':(m.live?'进行中':'未开始');
+
+    return `
+<div class="match-card">
+  <div class="match-header">
+    <div class="match-league">
+      <span class="league-icon">${m.leagueIcon||'⚽'}</span>
+      <span class="league-name">${m.league||'足球赛事'}</span>
+    </div>
+    <div class="match-time">${m.time||'-'}</div>
+    <div class="match-status ${statusClass}">${statusText}</div>
+  </div>
+  <div class="match-teams">
+    <div class="team">
+      <div class="team-logo">${m.homeTeamLogo||'🏠'}</div>
+      <div class="team-name">${m.homeTeam||'主队'}</div>
+    </div>
+    <div class="vs-text">VS</div>
+    <div class="team">
+      <div class="team-logo">${m.awayTeamLogo||'✈️'}</div>
+      <div class="team-name">${m.awayTeam||'客队'}</div>
+    </div>
+  </div>
+  <div class="match-prediction">
+    <div class="prediction-header">
+      <span class="prediction-title">🤖 AI预测</span>
+      <span class="prediction-confidence">${m.confidence||'--'}%</span>
+    </div>
+    <div class="prediction-content">
+      <div class="prediction-item">
+        <div class="prediction-label">推荐</div>
+        <div class="prediction-value">${m.recommend||'--'}</div>
+      </div>
+      <div class="prediction-item">
+        <div class="prediction-label">预期进球</div>
+        <div class="prediction-value blue">${m.expectedGoals||'--'}</div>
+      </div>
+      <div class="prediction-item">
+        <div class="prediction-label">盘口</div>
+        <div class="prediction-value">${m.handicap||'--'}</div>
+      </div>
+    </div>
+  </div>
+  ${isLocked?`
+  <div class="match-analysis">
+    <div class="analysis-locked">
+      <div class="lock-icon">🔒</div>
+      <div class="lock-text">消耗1钻石解锁详细分析</div>
+      <button class="btn-unlock" onclick="unlockMatch('${m.id}')">💎 解锁分析</button>
+    </div>
+  </div>
+  `:`
+  <div class="match-analysis">
+    <div class="analysis-title">📊 详细分析</div>
+    <div class="analysis-text">${m.analysis||'暂无详细分析'}</div>
+  </div>
+  `}
+</div>`;
+  }).join('');
+}
+
+function renderSummary(matches){
+  const total=matches.length;
+  const unlocked=(getSession().unlocked||[]).length;
+  const live=matches.filter(m=>m.live).length;
+  document.getElementById('summaryCard').innerHTML=`
+<div class="summary-card">
+  <div class="summary-title">📈 今日数据</div>
+  <div class="summary-stats">
+    <div class="stat-item"><div class="stat-value">${total}</div><div class="stat-label">总赛事</div></div>
+    <div class="stat-item"><div class="stat-value">${live}</div><div class="stat-label">进行中</div></div>
+    <div class="stat-item"><div class="stat-value">${unlocked}</div><div class="stat-label">已解锁</div></div>
+  </div>
+</div>`;
+}
+
+// ===== 解锁赛事 =====
+async function unlockMatch(matchId){
+  const session=getSession();
+  if(!session||session.user===ADMIN_USER)return;
+  if(session.coins<UNLOCK_COST){showToast('钻石不足，请签到或获取钻石','error');return}
+  try{
+    const u=await fbGetUser(session.user);
+    if(u.coins<UNLOCK_COST){showToast('钻石不足','error');return}
+    const newCoins=u.coins-UNLOCK_COST;
+    const newUnlocked=[...(u.unlocked||[]),matchId];
+    const newTotalSpent=(u.totalSpent||0)+UNLOCK_COST;
+    await fbUpdateUser(session.user,{coins:newCoins,unlocked:newUnlocked,totalSpent:newTotalSpent,history:firebase.firestore.FieldValue.arrayUnion({type:'spend',desc:'解锁赛事分析',amount:UNLOCK_COST,time:Date.now()})});
+    session.coins=newCoins;session.unlocked=newUnlocked;saveSession(session);
+    document.getElementById('coinNum').textContent=newCoins;
+    showToast('解锁成功！','success');
+    loadMatches();
+  }catch(e){console.error('解锁失败:',e);showToast('解锁失败','error')}
+}
+
+// ===== 客服聊天 =====
+function toggleChat(){document.getElementById('chatPopup').classList.toggle('hide')}
+function sendQuick(text){document.getElementById('chatInput').value=text;sendChat()}
+function sendChat(){
+  const input=document.getElementById('chatInput');
+  const msg=input.value.trim();
+  if(!msg)return;
+  const session=getSession();
+  if(!session){showToast('请先登录','error');return}
+  const msgs=document.getElementById('chatMsgs');
+  msgs.innerHTML+=`<div style="text-align:right;margin-bottom:12px"><div style="display:inline-block;background:#10b981;color:#fff;padding:8px 12px;border-radius:12px;max-width:80%">${msg}</div></div>`;
+  input.value='';
+  setTimeout(()=>{msgs.innerHTML+=`<div style="margin-bottom:12px"><div style="display:inline-block;background:#1e2a4a;color:#e8eaf0;padding:8px 12px;border-radius:12px;max-width:80%">感谢您的消息，客服稍后回复您！</div></div>`;msgs.scrollTop=msgs.scrollHeight},500);
+}
+
+// ===== 退出 =====
+function doLogout(){clearSession();showPage('auth');showToast('已退出登录','info')}
+
+// ===== 初始化 =====
+if(initFirebase()){
+  const session=getSession();
+  if(session){enterDashboard(session)}
+}else{
+  showPage('auth');
+}
+</script>
+</body>
+</html>

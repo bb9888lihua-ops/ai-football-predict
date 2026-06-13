@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 用户集合
+    match /users/{userId} {
+      // 用户可以读取自己的数据
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // 用户可以更新自己的数据（但不能修改关键字段）
+      allow write: if request.auth != null && request.auth.uid == userId;
+      // 管理员可以读写所有用户数据
+      allow read, write: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    // 赛事集合 - 所有人可读，管理员可写
+    match /matches/{matchId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    // 设置集合 - 所有人可读，管理员可写
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    // 聊天消息集合
+    match /chats/{chatId} {
+      // 用户可以创建聊天
+      allow create: if request.auth != null;
+      // 用户可以读取自己的聊天
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      // 管理员可以读写所有聊天
+      allow read, write: if request.auth != null && request.auth.token.admin == true;
+    }
+  }
+}
