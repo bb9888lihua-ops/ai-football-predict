@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI足势 - 智能足球赛事预测</title>
-<meta name="description" content="AI足势 - 基于Dixon-Coles泊松分布模型的专业足球赛事预测分析平台">
+<title>AI足势 - 神灯预测模型</title>
+<meta name="description" content="AI足势 - 基于Dixon-Coles泊松分布模型的神灯预测系统">
 <meta name="theme-color" content="#0a0e17">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪔</text></svg>">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:linear-gradient(135deg,#0a0e17 0%,#1a1f2e 100%);color:#e8eaf0;min-height:100vh;overflow-x:hidden}
@@ -19,7 +19,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 
 /* Header */
 .header{text-align:center;padding:40px 20px 20px}
-.header h1{font-size:36px;background:linear-gradient(135deg,#10b981,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.header h1{font-size:36px;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
 .header .subtitle{font-size:14px;color:#7a8bb5;margin-bottom:4px}
 .header .update{font-size:12px;color:#4a5578}
 
@@ -29,7 +29,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 /* Stats bar */
 .stats-bar{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
 .stat-card{background:linear-gradient(145deg,#141929,#0f1422);border:1px solid #1e2a4a;border-radius:12px;padding:14px 18px;flex:1;min-width:120px;text-align:center}
-.stat-value{font-size:24px;font-weight:700;background:linear-gradient(135deg,#10b981,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-value{font-size:24px;font-weight:700;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .stat-label{font-size:11px;color:#7a8bb5;margin-top:4px}
 
 /* Match cards */
@@ -47,15 +47,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 .team-name{font-size:14px;font-weight:600;text-align:center}
 .vs-text{font-size:20px;font-weight:700;color:#4a5578}
 
+/* Lambda prediction section */
 .match-prediction{background:#0a0e17;border-radius:12px;padding:16px;margin-bottom:12px}
 .prediction-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .prediction-title{font-size:13px;color:#7a8bb5}
-.prediction-confidence{font-size:12px;padding:4px 10px;border-radius:6px;background:linear-gradient(135deg,#10b981,#3b82f6);color:#fff;font-weight:600}
 .prediction-content{display:flex;justify-content:space-around;text-align:center}
 .prediction-item{flex:1}
 .prediction-label{font-size:11px;color:#4a5578;margin-bottom:4px}
-.prediction-value{font-size:18px;font-weight:700;color:#10b981}
+.prediction-value{font-size:18px;font-weight:700;color:#f59e0b}
 .prediction-value.blue{color:#3b82f6}
+.prediction-value.green{color:#10b981}
+
+/* Recommendation badges */
+.match-recs{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.rec-badge{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.rec-badge.over{background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3)}
+.rec-badge.under{background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3)}
+.rec-badge.none{background:rgba(122,139,181,0.1);color:#7a8bb5;border:1px solid rgba(122,139,181,0.2)}
+.rec-badge.mismatch{background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)}
 
 .match-analysis{background:#0a0e17;border-radius:12px;padding:16px}
 .analysis-title{font-size:13px;color:#7a8bb5;margin-bottom:10px;display:flex;align-items:center;gap:6px}
@@ -74,12 +83,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 
 /* Loading */
 .loading{text-align:center;padding:60px 20px;color:#4a5578}
-.loading-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:#10b981;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
+.loading-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:#f59e0b;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Footer */
 .footer{text-align:center;padding:40px 20px;color:#4a5578;font-size:12px}
-.footer a{color:#10b981;text-decoration:none}
+.footer a{color:#f59e0b;text-decoration:none}
 
 /* Responsive */
 @media(max-width:640px){
@@ -94,16 +103,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 <div class="toast" id="toast"></div>
 
 <div class="header">
-  <h1>AI足势</h1>
-  <div class="subtitle">智能足球赛事预测系统</div>
+  <h1>🪔 AI足势</h1>
+  <div class="subtitle">神灯预测模型 · 智能足球赛事预测</div>
   <div class="update">Dixon-Coles泊松分布模型 · 数据驱动分析</div>
 </div>
 
 <div class="container">
   <div class="stats-bar" id="statsBar" style="display:none">
     <div class="stat-card"><div class="stat-value" id="stat-total">-</div><div class="stat-label">今日赛事</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-confidence">-</div><div class="stat-label">平均信心</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-over">-</div><div class="stat-label">大球推荐</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-over">-</div><div class="stat-label">🔥大小球</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-mismatch">-</div><div class="stat-label">⚠️实力悬殊</div></div>
   </div>
 
   <div id="matchCards">
@@ -116,7 +125,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
   <div id="summaryCard"></div>
 
   <div class="footer">
-    AI足势 · 基于Dixon-Coles泊松分布模型的智能预测引擎<br>
+    🪔 AI足势 · 基于Dixon-Coles泊松分布模型的神灯预测引擎<br>
     <span style="margin-top:8px;display:inline-block">Powered by 神灯预测模型 · <a href="admin.html">管理后台</a></span>
   </div>
 </div>
@@ -161,6 +170,18 @@ function showToast(msg, type='info') {
   setTimeout(() => t.className = 'toast', 2500);
 }
 
+function renderOverUnder(rec) {
+  if (!rec) return '<span class="rec-badge none">不建议</span>';
+  if (rec.includes('大')) return '<span class="rec-badge over">🔥 大球</span>';
+  if (rec.includes('小')) return '<span class="rec-badge under">🔥 小球</span>';
+  return '<span class="rec-badge none">不建议</span>';
+}
+
+function renderMismatch(rec) {
+  if (!rec) return '';
+  return `<span class="rec-badge mismatch">⚠️ ${rec}</span>`;
+}
+
 function renderMatches(matches) {
   const container = document.getElementById('matchCards');
 
@@ -173,19 +194,23 @@ function renderMatches(matches) {
   // Update stats
   document.getElementById('statsBar').style.display = 'flex';
   document.getElementById('stat-total').textContent = matches.length;
-  const avgConf = matches.reduce((s, m) => s + (m.confidence || 0), 0) / matches.length;
-  document.getElementById('stat-confidence').textContent = Math.round(avgConf) + '%';
   const overCount = matches.filter(m => {
-    const r = (m.recommend || '').toLowerCase();
-    return r.includes('大') || r.includes('over');
+    const r = (m.overUnder || '').toLowerCase();
+    return r.includes('大') || r.includes('小');
   }).length;
   document.getElementById('stat-over').textContent = overCount;
+  const mismatchCount = matches.filter(m => m.mismatch && m.mismatch.length > 0).length;
+  document.getElementById('stat-mismatch').textContent = mismatchCount;
 
   // Render match cards
   container.innerHTML = matches.map(m => {
     const homeEmoji = (m.homeTeamLogo && m.homeTeamLogo.length <= 2) ? m.homeTeamLogo : getTeamEmoji(m.homeTeam || '');
     const awayEmoji = (m.awayTeamLogo && m.awayTeamLogo.length <= 2) ? m.awayTeamLogo : getTeamEmoji(m.awayTeam || '');
     const leagueIcon = m.leagueIcon || getLeagueIcon(m.league || '');
+
+    const lambdaHome = m.lambdaHome || '--';
+    const lambdaAway = m.lambdaAway || '--';
+    const totalGoals = m.totalGoals || (m.lambdaHome && m.lambdaAway ? (parseFloat(m.lambdaHome) + parseFloat(m.lambdaAway)).toFixed(2) : '--');
 
     return `
 <div class="match-card">
@@ -209,27 +234,33 @@ function renderMatches(matches) {
   </div>
   <div class="match-prediction">
     <div class="prediction-header">
-      <span class="prediction-title">🤖 AI预测</span>
-      <span class="prediction-confidence">${m.confidence || '--'}%</span>
+      <span class="prediction-title">🪔 神灯预测</span>
     </div>
     <div class="prediction-content">
       <div class="prediction-item">
-        <div class="prediction-label">推荐</div>
-        <div class="prediction-value">${m.recommend || '--'}</div>
+        <div class="prediction-label">λ主</div>
+        <div class="prediction-value">${lambdaHome}</div>
       </div>
       <div class="prediction-item">
-        <div class="prediction-label">预期进球</div>
-        <div class="prediction-value blue">${m.expectedGoals || '--'}</div>
+        <div class="prediction-label">λ客</div>
+        <div class="prediction-value blue">${lambdaAway}</div>
       </div>
       <div class="prediction-item">
-        <div class="prediction-label">盘口</div>
-        <div class="prediction-value">${m.handicap || '--'}</div>
+        <div class="prediction-label">总进球</div>
+        <div class="prediction-value green">${totalGoals}</div>
       </div>
     </div>
   </div>
+  <div class="match-recs">
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:11px;color:#4a5578">2.5球:</span>
+      ${renderOverUnder(m.overUnder)}
+    </div>
+    ${renderMismatch(m.mismatch)}
+  </div>
   ${m.analysis ? `
   <div class="match-analysis">
-    <div class="analysis-title">📊 详细分析</div>
+    <div class="analysis-title">🔑 关键看点</div>
     <div class="analysis-text">${m.analysis}</div>
   </div>` : ''}
 </div>`;
@@ -237,15 +268,21 @@ function renderMatches(matches) {
 
   // Summary
   const total = matches.length;
-  const avgGoals = matches.reduce((s, m) => s + parseFloat(m.expectedGoals || 0), 0) / total;
-  const highConf = matches.filter(m => (m.confidence || 0) >= 70).length;
+  const avgGoals = matches.reduce((s, m) => {
+    const tg = m.totalGoals || (m.lambdaHome && m.lambdaAway ? (parseFloat(m.lambdaHome) + parseFloat(m.lambdaAway)) : 0);
+    return s + tg;
+  }, 0) / total;
+  const overRecs = matches.filter(m => {
+    const r = (m.overUnder || '').toLowerCase();
+    return r.includes('大') || r.includes('小');
+  }).length;
   document.getElementById('summaryCard').innerHTML = `
 <div class="summary-card">
   <div class="summary-title">📈 今日数据汇总</div>
   <div class="summary-stats">
     <div class="stat-item"><div class="stat-value">${total}</div><div class="stat-label">总赛事</div></div>
     <div class="stat-item"><div class="stat-value">${avgGoals.toFixed(1)}</div><div class="stat-label">场均进球</div></div>
-    <div class="stat-item"><div class="stat-value">${highConf}</div><div class="stat-label">高信心(≥70%)</div></div>
+    <div class="stat-item"><div class="stat-value">${overRecs}</div><div class="stat-label">大小球推荐</div></div>
   </div>
 </div>`;
 }
