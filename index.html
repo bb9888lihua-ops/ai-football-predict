@@ -43,7 +43,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 
 .match-teams{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .team{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
-.team-logo{width:48px;height:48px;border-radius:50%;background:#1e2a4a;display:flex;align-items:center;justify-content:center;font-size:24px}
+.team-logo{width:48px;height:48px;border-radius:50%;background:#1e2a4a;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+.team-logo img{width:100%;height:100%;object-fit:contain}
 .team-name{font-size:14px;font-weight:600;text-align:center}
 .vs-text{font-size:20px;font-weight:700;color:#4a5578}
 
@@ -111,8 +112,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 <div class="container">
   <div class="stats-bar" id="statsBar" style="display:none">
     <div class="stat-card"><div class="stat-value" id="stat-total">-</div><div class="stat-label">今日赛事</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-over">-</div><div class="stat-label">🔥大小球</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-mismatch">-</div><div class="stat-label">⚠️实力悬殊</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-over">-</div><div class="stat-label">🔥进球趋势</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-mismatch">-</div><div class="stat-label">⚠️实力差</div></div>
   </div>
 
   <div id="matchCards">
@@ -172,8 +173,8 @@ function showToast(msg, type='info') {
 
 function renderOverUnder(rec) {
   if (!rec) return '<span class="rec-badge none">不建议</span>';
-  if (rec.includes('大')) return '<span class="rec-badge over">🔥 大球</span>';
-  if (rec.includes('小')) return '<span class="rec-badge under">🔥 小球</span>';
+  if (rec.includes('大')) return '<span class="rec-badge over">🔥 进球多</span>';
+  if (rec.includes('小')) return '<span class="rec-badge under">🔥 进球少</span>';
   return '<span class="rec-badge none">不建议</span>';
 }
 
@@ -204,8 +205,13 @@ function renderMatches(matches) {
 
   // Render match cards
   container.innerHTML = matches.map(m => {
-    const homeEmoji = (m.homeTeamLogo && m.homeTeamLogo.length <= 2) ? m.homeTeamLogo : getTeamEmoji(m.homeTeam || '');
-    const awayEmoji = (m.awayTeamLogo && m.awayTeamLogo.length <= 2) ? m.awayTeamLogo : getTeamEmoji(m.awayTeam || '');
+    function renderTeamLogo(logo, teamName) {
+      if (logo && logo.startsWith('http')) return `<img src="${logo}" alt="${teamName || ''}" onerror="this.outerHTML='⚽'">`;
+      if (logo && logo.length <= 2) return logo;
+      return getTeamEmoji(teamName || '');
+    }
+    const homeEmoji = renderTeamLogo(m.homeTeamLogo, m.homeTeam);
+    const awayEmoji = renderTeamLogo(m.awayTeamLogo, m.awayTeam);
     const leagueIcon = m.leagueIcon || getLeagueIcon(m.league || '');
 
     const lambdaHome = m.lambdaHome || '--';
@@ -282,7 +288,7 @@ function renderMatches(matches) {
   <div class="summary-stats">
     <div class="stat-item"><div class="stat-value">${total}</div><div class="stat-label">总赛事</div></div>
     <div class="stat-item"><div class="stat-value">${avgGoals.toFixed(1)}</div><div class="stat-label">场均进球</div></div>
-    <div class="stat-item"><div class="stat-value">${overRecs}</div><div class="stat-label">大小球推荐</div></div>
+    <div class="stat-item"><div class="stat-value">${overRecs}</div><div class="stat-label">进球趋势分析</div></div>
   </div>
 </div>`;
 }
