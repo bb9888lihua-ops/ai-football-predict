@@ -104,27 +104,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 .model-text{font-size:12px;color:#5a6a8a;line-height:1.8;border-top:1px solid #1a2240;padding-top:16px}
 .model-text strong{color:#7a8bb5}
 
-/* History section */
-.history-section{background:linear-gradient(145deg,#141929,#0f1422);border:1px solid #1e2a4a;border-radius:16px;padding:28px;margin-bottom:16px}
-.history-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.history-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.history-stat{text-align:center;padding:12px;background:rgba(10,14,23,0.5);border-radius:10px;border:1px solid #1a2240}
-.history-stat-value{font-size:20px;font-weight:700}
-.history-stat-value.green{color:#10b981}
-.history-stat-value.yellow{color:#f59e0b}
-.history-stat-value.blue{color:#3b82f6}
-.history-stat-label{font-size:10px;color:#5a6a8a;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
-.history-bar{height:8px;background:#1a2240;border-radius:4px;overflow:hidden;margin-top:12px}
-.history-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#10b981,#3b82f6);transition:width 1s ease}
-.history-records{margin-top:16px}
-.history-record{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(30,42,74,0.3);font-size:12px}
-.history-record:last-child{border-bottom:none}
-.hr-match{color:#7a8bb5;flex:1}
-.hr-result{padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600}
-.hr-win{background:rgba(16,185,129,0.12);color:#10b981}
-.hr-loss{background:rgba(239,68,68,0.1);color:#ef4444}
-.hr-push{background:rgba(122,139,181,0.1);color:#7a8bb5}
-
 /* No matches */
 .no-matches{text-align:center;padding:80px 20px;color:#4a5578}
 .no-matches-icon{font-size:64px;margin-bottom:16px;opacity:0.4}
@@ -157,7 +136,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
   .stat-value{font-size:18px}
   .container{padding:14px}
   .model-grid{grid-template-columns:1fr}
-  .history-stats{grid-template-columns:repeat(2,1fr)}
   .summary-stats{grid-template-columns:1fr}
   .match-card{padding:16px}
   .team-logo{width:44px;height:44px;font-size:20px}
@@ -259,19 +237,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
       <strong>如何使用本系统：</strong>系统基于两支球队近10场比赛的进球与失球数据，通过Dixon-Coles模型分别计算出主队和客队的期望进球值（λ主/λ客）。λ值越高代表该队预期进球越多。总进球值为两队λ之和，结合2.5球阈值分析进球趋势。所有预测均为概率模型输出，仅供数据分析参考。
     </div>
   </div>
-
-  <!-- History section -->
-  <div class="history-section" id="history-section">
-    <div class="history-title">📈 近期预测回顾</div>
-    <div class="history-stats">
-      <div class="history-stat"><div class="history-stat-value green" id="hr-accuracy">-</div><div class="history-stat-label">命中率</div></div>
-      <div class="history-stat"><div class="history-stat-value yellow" id="hr-total">-</div><div class="history-stat-label">总预测</div></div>
-      <div class="history-stat"><div class="history-stat-value blue" id="hr-streak">-</div><div class="history-stat-label">连续命中</div></div>
-      <div class="history-stat"><div class="history-stat-value green" id="hr-roi">-</div><div class="history-stat-label">模型评分</div></div>
-    </div>
-    <div class="history-bar"><div class="history-bar-fill" id="hr-bar" style="width:0%"></div></div>
-    <div class="history-records" id="hr-records"></div>
-  </div>
 </div>
 
 <!-- Footer -->
@@ -280,7 +245,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
   <div class="footer-links">
     <a href="#">首页</a>
     <a href="#model-section">模型说明</a>
-    <a href="#history-section">预测战绩</a>
     <a href="admin.html">管理后台</a>
   </div>
   <div class="footer-disclaimer">
@@ -480,39 +444,6 @@ function renderMatches(matches) {
 
 }
 
-// Render sample history data
-function renderHistory() {
-  var sampleData = {
-    accuracy: '68%',
-    total: 156,
-    streak: 5,
-    roi: 'A+',
-    barWidth: 68,
-    records: [
-      { match: '曼城 vs 阿森纳', pred: '进球多 (2.8球)', result: 'win' },
-      { match: '皇马 vs 巴萨', pred: '实力差', result: 'win' },
-      { match: '拜仁 vs 多特', pred: '进球多 (3.5球)', result: 'win' },
-      { match: '利物浦 vs 切尔西', pred: '进球少 (2.1球)', result: 'loss' },
-      { match: '国米 vs AC米兰', pred: '进球多 (2.9球)', result: 'win' },
-      { match: '北京国安 vs 上海海港', pred: '进球少 (1.8球)', result: 'win' },
-    ]
-  };
-
-  document.getElementById('hr-accuracy').textContent = sampleData.accuracy;
-  document.getElementById('hr-total').textContent = sampleData.total;
-  document.getElementById('hr-streak').textContent = sampleData.streak;
-  document.getElementById('hr-roi').textContent = sampleData.roi;
-  setTimeout(function() {
-    document.getElementById('hr-bar').style.width = sampleData.barWidth + '%';
-  }, 300);
-
-  document.getElementById('hr-records').innerHTML = sampleData.records.map(function(r) {
-    var cls = r.result === 'win' ? 'hr-win' : r.result === 'loss' ? 'hr-loss' : 'hr-push';
-    var text = r.result === 'win' ? '命中' : r.result === 'loss' ? '未中' : '走水';
-    return '<div class="history-record"><span class="hr-match">' + r.match + ' · ' + r.pred + '</span><span class="hr-result ' + cls + '">' + text + '</span></div>';
-  }).join('');
-}
-
 async function loadMatches() {
   try {
     const resp = await fetch('data/matches.json?t=' + Date.now());
@@ -528,7 +459,6 @@ async function loadMatches() {
 
 // Init
 loadMatches();
-renderHistory();
 setInterval(loadMatches, 5 * 60 * 1000);
 
 // ========== 自定义客服面板 ==========
