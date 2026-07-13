@@ -169,7 +169,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
   .team-logo{width:44px;height:44px;font-size:20px}
   .team-name{font-size:12px;max-width:80px}
   .prediction-value{font-size:18px}
+  .cs-panel{width:calc(100vw - 32px);right:16px;bottom:90px;max-height:60vh}
+  .cs-btn{width:50px;height:50px;bottom:20px;right:16px}
+  .cs-btn span{font-size:22px}
 }
+
+/* 客服按钮 + 弹窗 */
+.cs-btn{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;cursor:pointer;z-index:9999;box-shadow:0 4px 20px rgba(245,158,11,0.4);display:flex;align-items:center;justify-content:center;transition:transform 0.2s,box-shadow 0.2s}
+.cs-btn:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(245,158,11,0.5)}
+.cs-btn:active{transform:scale(0.95)}
+.cs-btn span{font-size:26px;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.2))}
+.cs-btn .cs-badge{position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:#10b981;border-radius:50%;border:2px solid #0a0e17}
+
+.cs-panel{position:fixed;bottom:96px;right:24px;width:360px;max-height:70vh;background:#141a29;border:1px solid rgba(255,255,255,0.08);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.5);z-index:9998;display:none;flex-direction:column;overflow:hidden;animation:csSlideUp 0.25s ease}
+.cs-panel.open{display:flex}
+@keyframes csSlideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.cs-header{padding:16px 20px;background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(239,68,68,0.08));border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
+.cs-header-left{display:flex;align-items:center;gap:10px}
+.cs-header-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;font-size:18px}
+.cs-header-title{font-size:15px;font-weight:700;color:#e8eaf0}
+.cs-header-sub{font-size:11px;color:#7a8bb5;margin-top:2px}
+.cs-close{width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:#7a8bb5;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.cs-close:hover{background:rgba(255,255,255,0.12);color:#e8eaf0}
+
+.cs-body{overflow-y:auto;padding:12px;flex:1}
+.cs-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-bottom:8px;overflow:hidden;transition:border-color 0.15s}
+.cs-item:hover{border-color:rgba(245,158,11,0.2)}
+.cs-item-q{padding:12px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;font-weight:600;color:#e8eaf0;transition:color 0.15s}
+.cs-item-q:hover{color:#f59e0b}
+.cs-item-q .cs-arrow{font-size:10px;color:#7a8bb5;transition:transform 0.2s;flex-shrink:0}
+.cs-item.open .cs-arrow{transform:rotate(180deg)}
+.cs-item-a{max-height:0;overflow:hidden;transition:max-height 0.25s ease,padding 0.25s ease;padding:0 16px;font-size:12px;line-height:1.7;color:#9aa5c0;border-top:0 solid transparent}
+.cs-item.open .cs-item-a{max-height:300px;padding:0 16px 14px;border-top:1px solid rgba(255,255,255,0.04)}
+
+.cs-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.06);text-align:center}
+.cs-footer-text{font-size:11px;color:#4a5578}
 </style>
 </head>
 <body>
@@ -519,17 +554,84 @@ loadMatches();
 renderHistory();
 setInterval(loadMatches, 5 * 60 * 1000);
 
-// Crisp 在线客服
-window.$crisp=[];window.CRISP_WEBSITE_ID="YOUR_CRISP_WEBSITE_ID";
-(function(){var d=document;var s=d.createElement("script");
-s.src="https://client.crisp.chat/l.js";s.async=1;
-d.getElementsByTagName("head")[0].appendChild(s);
-s.onload=function(){
-  $crisp.push(["set","theme","night"]);
-  $crisp.push(["set","position","right"]);
-  $crisp.push(["set","locale","zh"]);
-  $crisp.push(["on","chat:opened",function(){$crisp.push(["set","data","source","website")]}]);
-};})();
+// ========== 自定义客服面板 ==========
+// ★★★ 在这里修改你的客服回复内容 ★★★
+var csReplies = [
+  {
+    q: '🪔 预测模型是什么？',
+    a: '我们使用 Dixon-Coles 泊松分布模型，基于每支球队近10场比赛的攻防数据，计算进球期望值（λ），综合得出大小球和赛事走势预测。'
+  },
+  {
+    q: '📊 预测准确率如何？',
+    a: '模型大小球方向命中率稳定在 60%-65% 左右。所有预测仅供参考，不构成任何建议。'
+  },
+  {
+    q: '🕐 每天什么时候更新？',
+    a: '每天北京时间 11:40 左右自动采集数据并更新当日预测，请留意网站刷新。'
+  },
+  {
+    q: '💡 λ 值是什么意思？',
+    a: 'λ（lambda）是泊松分布的核心参数，代表预期进球数。λ 主队=主队预期进球，λ 客队=客队预期进球，两者相加=总进球预期。'
+  },
+  {
+    q: '🤝 合作 / 反馈',
+    a: '如有合作需求或使用反馈，请通过我们的官方渠道联系客服，我们会尽快回复。'
+  }
+];
+
+function renderCsPanel() {
+  var html = '<div class="cs-item">';
+  csReplies.forEach(function(r, i) {
+    html += '<div class="cs-item-q" onclick="toggleCsItem(this)">' +
+      '<span>' + r.q + '</span>' +
+      '<span class="cs-arrow">▼</span>' +
+    '</div>' +
+    '<div class="cs-item-a">' + r.a + '</div>';
+  });
+  html += '</div>';
+  document.getElementById('csBody').innerHTML = html;
+}
+
+function toggleCsItem(el) {
+  el.parentElement.classList.toggle('open');
+}
+
+function toggleCsPanel() {
+  var panel = document.getElementById('csPanel');
+  panel.classList.toggle('open');
+}
+
+function closeCsPanel() {
+  document.getElementById('csPanel').classList.remove('open');
+}
+
+// renderCsPanel 在 DOM 加载后调用
+document.addEventListener('DOMContentLoaded', renderCsPanel);
 </script>
+
+<!-- 客服弹窗 -->
+<div id="csPanel" class="cs-panel">
+  <div class="cs-header">
+    <div class="cs-header-left">
+      <div class="cs-header-icon">🪔</div>
+      <div>
+        <div class="cs-header-title">AI足势 · 帮助中心</div>
+        <div class="cs-header-sub">点击问题查看回复</div>
+      </div>
+    </div>
+    <button class="cs-close" onclick="closeCsPanel()">✕</button>
+  </div>
+  <div class="cs-body" id="csBody"></div>
+  <div class="cs-footer">
+    <div class="cs-footer-text">AI足势 · 神灯预测模型 · 仅供参考</div>
+  </div>
+</div>
+
+<!-- 客服按钮 -->
+<button class="cs-btn" onclick="toggleCsPanel()" title="帮助中心">
+  <span>💬</span>
+  <div class="cs-badge"></div>
+</button>
+
 </body>
 </html>
