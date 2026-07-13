@@ -125,12 +125,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 .hr-loss{background:rgba(239,68,68,0.1);color:#ef4444}
 .hr-push{background:rgba(122,139,181,0.1);color:#7a8bb5}
 
-/* Summary card */
-.summary-card{background:linear-gradient(145deg,#141929,#0f1422);border:1px solid #1e2a4a;border-radius:16px;padding:24px;margin-top:24px}
-.summary-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.summary-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.stat-item{text-align:center;padding:12px;background:rgba(10,14,23,0.5);border-radius:10px}
-
 /* No matches */
 .no-matches{text-align:center;padding:80px 20px;color:#4a5578}
 .no-matches-icon{font-size:64px;margin-bottom:16px;opacity:0.4}
@@ -240,9 +234,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
     <div class="skeleton-card"><div class="skeleton-line thick"></div><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
     <div class="skeleton-card"><div class="skeleton-line thick"></div><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
   </div>
-
-  <!-- Summary -->
-  <div id="summaryCard"></div>
 
   <!-- Model explanation -->
   <div class="model-section" id="model-section">
@@ -443,10 +434,7 @@ function renderMatchCards(matches) {
         '</div>' +
       '</div>' +
       '<div class="match-recs">' +
-        '<div style="display:flex;align-items:center;gap:6px">' +
-          '<span style="font-size:10px;color:#3a4560">预测:</span>' +
-          renderOverUnder(m.overUnder) +
-        '</div>' +
+        renderOverUnder(m.overUnder) +
         renderMismatch(m.mismatch) +
       '</div>' +
       (m.analysis ? '<div class="match-analysis"><div class="analysis-title">🔑 关键看点</div><div class="analysis-text">' + m.analysis + '</div></div>' : '') +
@@ -461,7 +449,6 @@ function renderMatches(matches) {
     document.getElementById('statsBar').style.display = 'none';
     document.getElementById('leagueFilter').style.display = 'none';
     renderMatchCards([]);
-    document.getElementById('summaryCard').innerHTML = '';
     return;
   }
 
@@ -486,21 +473,6 @@ function renderMatches(matches) {
   renderLeagueFilter(matches);
   renderMatchCards(matches);
 
-  // Summary
-  const total = matches.length;
-  const overRecs = matches.filter(function(m) {
-    const r = (m.overUnder || '').toLowerCase();
-    return r.includes('大') || r.includes('小');
-  }).length;
-  document.getElementById('summaryCard').innerHTML =
-    '<div class="summary-card">' +
-      '<div class="summary-title">📈 今日数据汇总</div>' +
-      '<div class="summary-stats">' +
-        '<div class="stat-item"><div class="stat-value">' + total + '</div><div class="stat-label">总赛事</div></div>' +
-        '<div class="stat-item"><div class="stat-value">' + avgGoals.toFixed(1) + '</div><div class="stat-label">场均进球</div></div>' +
-        '<div class="stat-item"><div class="stat-value">' + overRecs + '</div><div class="stat-label">进球趋势分析</div></div>' +
-      '</div>' +
-    '</div>';
 }
 
 // Render sample history data
