@@ -251,35 +251,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 .auth-switch a{color:#f59e0b;cursor:pointer;font-weight:600;text-decoration:none}
 .auth-switch a:hover{text-decoration:underline}
 
-/* Favorites button on match cards */
-.fav-btn{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s;z-index:5;opacity:0.7}
-.fav-btn:hover{opacity:1;transform:scale(1.1);border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)}
-.fav-btn.active{opacity:1;background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4)}
-.match-card{position:relative}
+/* ===== 积分解锁系统 ===== */
 
-/* Favorites panel */
-.fav-panel{position:fixed;top:52px;right:0;width:340px;max-height:calc(100vh - 72px);background:#141a29;border-left:1px solid rgba(255,255,255,0.08);box-shadow:-8px 0 32px rgba(0,0,0,0.3);z-index:999;display:none;flex-direction:column;animation:favSlideIn 0.25s ease}
-.fav-panel.open{display:flex}
-@keyframes favSlideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-.fav-panel-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
-.fav-panel-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
-.fav-panel-close{width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:#7a8bb5;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
-.fav-panel-close:hover{background:rgba(255,255,255,0.12);color:#e8eaf0}
-.fav-panel-body{overflow-y:auto;flex:1;padding:12px}
-.fav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:8px;transition:border-color 0.15s}
-.fav-item:hover{border-color:rgba(245,158,11,0.2)}
-.fav-item-teams{flex:1;font-size:12px;font-weight:600;color:#e8eaf0;line-height:1.4}
-.fav-item-league{font-size:10px;color:#7a8bb5}
-.fav-item-remove{width:24px;height:24px;border-radius:6px;border:none;background:rgba(239,68,68,0.08);color:#ef4444;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
-.fav-item-remove:hover{background:rgba(239,68,68,0.2)}
-.fav-empty{text-align:center;padding:40px 20px;color:#4a5578;font-size:13px}
+/* 锁定遮罩层 */
+.lock-overlay{position:absolute;inset:0;background:rgba(10,14,23,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;z-index:5;cursor:pointer;transition:opacity 0.3s}
+.lock-overlay:hover{background:rgba(10,14,23,0.72)}
+.lock-overlay .lock-icon{font-size:2rem;margin-bottom:8px}
+.lock-overlay .lock-text{color:#94a3b8;font-size:0.85rem;margin-bottom:12px;text-align:center;line-height:1.5}
+.lock-overlay .unlock-btn{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none;padding:8px 22px;border-radius:20px;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(245,158,11,0.3)}
+.lock-overlay .unlock-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,158,11,0.4)}
+.lock-overlay .lock-login-hint{color:#7a8bb5;font-size:0.75rem;margin-top:8px;text-decoration:underline;cursor:pointer}
+
+/* 免费标签 */
+.free-badge{position:absolute;top:12px;right:48px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;z-index:6;box-shadow:0 2px 8px rgba(16,185,129,0.3)}
+
+/* 已解锁标签 */
+.unlocked-badge{position:absolute;top:12px;right:48px;background:rgba(16,185,129,0.15);color:#10b981;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;z-index:6;border:1px solid rgba(16,185,129,0.2)}
+
+/* 积分显示 */
+.credits-display{display:flex;align-items:center;gap:4px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:16px;padding:3px 10px;font-size:12px;font-weight:600;color:#f59e0b}
+.credits-display.zero{color:#ef4444;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.2)}
+
+.match-card{position:relative}
 
 @media(max-width:640px){
   .navbar{padding:0 14px;height:48px}
   .navbar-brand{font-size:14px}
   .nav-btn{padding:6px 12px;font-size:12px}
   .user-dropdown{width:calc(100vw - 28px);right:-14px}
-  .fav-panel{width:100vw;right:0}
   .auth-modal{max-width:100%;margin:0 12px}
   .auth-modal-body{padding:8px 20px 24px}
   .auth-modal-header{padding:20px 20px 14px}
@@ -458,6 +457,16 @@ function renderTeamLogo(logo, teamName) {
   return getTeamEmoji(teamName || '');
 }
 
+function isMatchFree(matchId) {
+  return allMatches.length > 0 && allMatches[0].id === matchId;
+}
+
+function shouldShowLocked(m) {
+  if (isMatchFree(m.id)) return false;
+  if (!UserDB.getSession()) return true;
+  return !UserDB.isUnlocked(m.id);
+}
+
 function renderMatchCards(matches) {
   const container = document.getElementById('matchCards');
   const filtered = activeFilter === 'all' ? matches : matches.filter(function(m) { return (m.league || '其他') === activeFilter; });
@@ -478,9 +487,38 @@ function renderMatchCards(matches) {
     const lambdaAway = m.lambdaAway || '--';
     const totalGoals = m.totalGoals || (m.lambdaHome && m.lambdaAway ? (parseFloat(m.lambdaHome) + parseFloat(m.lambdaAway)).toFixed(2) : '--');
 
-    const favBtn = isLoggedIn ? '<button class="fav-btn' + (UserDB.isFavorite(m.id) ? ' active' : '') + '" onclick="toggleFavorite(\'' + m.id + '\')" title="收藏">' + (UserDB.isFavorite(m.id) ? '❤️' : '🤍') + '</button>' : '';
+    const free = isMatchFree(m.id);
+    const locked = shouldShowLocked(m);
 
-    return '<div class="match-card" style="animation-delay:' + (idx * 0.05) + 's">' + favBtn +
+    // 免费/已解锁标签
+    let statusBadge = '';
+    if (free) {
+      statusBadge = '<div class="free-badge">🆓 免费</div>';
+    } else if (isLoggedIn && UserDB.isUnlocked(m.id)) {
+      statusBadge = '<div class="unlocked-badge">✅ 已解锁</div>';
+    }
+
+    // 锁定遮罩层
+    let lockOverlay = '';
+    if (locked) {
+      if (isLoggedIn) {
+        const credits = UserDB.getCredits();
+        lockOverlay = '<div class="lock-overlay" onclick="unlockMatch(\'' + m.id + '\')">' +
+          '<div class="lock-icon">🔒</div>' +
+          '<div class="lock-text">付费分析内容</div>' +
+          '<button class="unlock-btn" onclick="event.stopPropagation();unlockMatch(\'' + m.id + '\')">🔓 解锁 ' + credits + '积分</button>' +
+        '</div>';
+      } else {
+        lockOverlay = '<div class="lock-overlay" onclick="showLogin()">' +
+          '<div class="lock-icon">🔒</div>' +
+          '<div class="lock-text">付费分析内容</div>' +
+          '<button class="unlock-btn" onclick="event.stopPropagation();showLogin()">登录后解锁</button>' +
+          '<div class="lock-login-hint" onclick="event.stopPropagation();showLogin()">点击登录</div>' +
+        '</div>';
+      }
+    }
+
+    return '<div class="match-card" style="animation-delay:' + (idx * 0.05) + 's">' + statusBadge +
       '<div class="match-header">' +
         '<div class="match-league">' +
           '<span class="league-icon">' + leagueIcon + '</span>' +
@@ -503,6 +541,7 @@ function renderMatchCards(matches) {
           '<div class="team-name">' + (m.awayTeam || '客队') + '</div>' +
         '</div>' +
       '</div>' +
+      '<div class="lockable-content" style="position:relative">' +
       '<div class="match-prediction">' +
         '<div class="prediction-header">' +
           '<span class="prediction-title">🪔 神灯预测</span>' +
@@ -527,6 +566,8 @@ function renderMatchCards(matches) {
         renderMismatch(m.mismatch) +
       '</div>' +
       (m.analysis ? '<div class="match-analysis"><div class="analysis-title">🔑 关键看点</div><div class="analysis-text">' + m.analysis + '</div></div>' : '') +
+      lockOverlay +
+      '</div>' +
     '</div>';
   }).join('');
 }
@@ -672,7 +713,8 @@ const UserDB = {
       pwd_hash,
       phone: phone ? phone.trim() : '',
       createdAt: new Date().toISOString(),
-      favorites: []
+      credits: 0,
+      unlocked: []
     };
     this._saveUsers(users);
     return { ok: true };
@@ -712,32 +754,40 @@ const UserDB = {
     return users[session.username] || null;
   },
 
-  toggleFavorite(matchId) {
-    const session = this.getSession();
-    if (!session) return false;
-    const users = this._getUsers();
-    const user = users[session.username];
-    if (!user) return false;
-    if (!user.favorites) user.favorites = [];
-    const idx = user.favorites.indexOf(matchId);
-    if (idx >= 0) user.favorites.splice(idx, 1);
-    else user.favorites.push(matchId);
-    this._saveUsers(users);
-    return idx < 0;
-  },
+  // ===== 积分解锁系统 =====
 
-  isFavorite(matchId) {
-    const session = this.getSession();
-    if (!session) return false;
-    const users = this._getUsers();
-    const user = users[session.username];
-    if (!user || !user.favorites) return false;
-    return user.favorites.includes(matchId);
-  },
-
-  getFavCount() {
+  getCredits() {
     const data = this.getUserData();
-    return (data && data.favorites) ? data.favorites.length : 0;
+    return (data && typeof data.credits === 'number') ? data.credits : 0;
+  },
+
+  isUnlocked(matchId) {
+    const data = this.getUserData();
+    if (!data || !data.unlocked) return false;
+    return data.unlocked.includes(matchId);
+  },
+
+  unlockMatch(matchId) {
+    const session = this.getSession();
+    if (!session) return { ok: false, msg: '请先登录' };
+    const users = this._getUsers();
+    const user = users[session.username];
+    if (!user) return { ok: false, msg: '用户不存在' };
+    if (!user.unlocked) user.unlocked = [];
+    if (user.unlocked.includes(matchId)) return { ok: true, msg: '已解锁' };
+    if (!user.credits || user.credits < 1) return { ok: false, msg: '积分不足，请联系官方客服充值' };
+    user.credits -= 1;
+    user.unlocked.push(matchId);
+    this._saveUsers(users);
+    return { ok: true };
+  },
+
+  addCredits(username, amount) {
+    const users = this._getUsers();
+    if (!users[username]) return false;
+    users[username].credits = (users[username].credits || 0) + amount;
+    this._saveUsers(users);
+    return true;
   }
 };
 
@@ -835,7 +885,6 @@ function doLogout() {
   if (dd) dd.parentElement.classList.remove('open');
   updateNavbar();
   renderMatchCards(allMatches);
-  closeFavPanel();
 }
 
 function toggleUserPanel() {
@@ -843,48 +892,29 @@ function toggleUserPanel() {
   if (menu) menu.classList.toggle('open');
 }
 
-function toggleFavorite(matchId) {
-  if (!UserDB.getSession()) { showToast('请先登录后再收藏', 'error'); return; }
-  const added = UserDB.toggleFavorite(matchId);
-  showToast(added ? '已收藏 ❤️' : '已取消收藏', 'success');
-  renderMatchCards(allMatches);
-  if (document.getElementById('favPanel').classList.contains('open')) renderFavPanel();
-  updateNavbar();
-}
-
-function renderFavPanel() {
-  const body = document.getElementById('favPanelBody');
-  const data = UserDB.getUserData();
-  if (!data || !data.favorites || data.favorites.length === 0) {
-    body.innerHTML = '<div class="fav-empty">暂无收藏比赛<br><span style="font-size:11px;color:#3a4560;margin-top:6px;display:block">浏览比赛时点击 ❤️ 即可收藏</span></div>';
+function unlockMatch(matchId) {
+  if (!UserDB.getSession()) {
+    showToast('请先登录后再解锁', 'error');
+    showLogin();
     return;
   }
-  const favIds = data.favorites;
-  const favMatches = allMatches.filter(m => favIds.includes(m.id));
-  if (favMatches.length === 0) {
-    body.innerHTML = '<div class="fav-empty">收藏的比赛暂无数据</div>';
+  if (UserDB.isUnlocked(matchId)) {
+    showToast('该比赛已解锁', 'info');
     return;
   }
-  body.innerHTML = favMatches.map(m => {
-    const leagueIcon = m.leagueIcon || getLeagueIcon(m.league || '');
-    return '<div class="fav-item">' +
-      '<span style="font-size:16px">' + leagueIcon + '</span>' +
-      '<div class="fav-item-teams">' +
-        '<div>' + (m.homeTeam || '主队') + ' vs ' + (m.awayTeam || '客队') + '</div>' +
-        '<div class="fav-item-league">' + (m.league || '') + ' · ' + (m.date || '') + ' ' + (m.time || '') + '</div>' +
-      '</div>' +
-      '<button class="fav-item-remove" onclick="toggleFavorite(\'' + m.id + '\')" title="取消收藏">✕</button>' +
-    '</div>';
-  }).join('');
-}
-
-function showFavPanel() {
-  renderFavPanel();
-  document.getElementById('favPanel').classList.add('open');
-}
-
-function closeFavPanel() {
-  document.getElementById('favPanel').classList.remove('open');
+  const credits = UserDB.getCredits();
+  if (credits < 1) {
+    showToast('积分不足，请联系官方客服充值', 'error');
+    return;
+  }
+  const result = UserDB.unlockMatch(matchId);
+  if (result.ok) {
+    showToast('🔓 解锁成功！积分-1', 'success');
+    updateNavbar();
+    renderMatchCards(allMatches);
+  } else {
+    showToast(result.msg || '解锁失败', 'error');
+  }
 }
 
 function updateNavbar() {
@@ -894,13 +924,15 @@ function updateNavbar() {
     const data = UserDB.getUserData();
     if (!data) { actions.innerHTML = '<button class="nav-btn nav-btn-outline" onclick="showLogin()">登录</button><button class="nav-btn nav-btn-primary" onclick="showRegister()">注册</button>'; return; }
     const initial = session.username.charAt(0).toUpperCase();
-    const favCount = UserDB.getFavCount();
+    const credits = UserDB.getCredits();
+    const creditsClass = credits > 0 ? 'credits-display' : 'credits-display zero';
     const phoneDisplay = data.phone ? data.phone : '';
     actions.innerHTML =
       '<div class="user-menu" id="userMenu">' +
         '<div class="user-avatar-btn" onclick="toggleUserPanel()">' +
           '<div class="user-avatar">' + initial + '</div>' +
           '<span class="user-name">' + session.username + '</span>' +
+          '<span class="' + creditsClass + '">💰 ' + credits + '</span>' +
           '<span class="user-arrow">▼</span>' +
         '</div>' +
         '<div class="user-dropdown" id="userDropdown">' +
@@ -912,11 +944,10 @@ function updateNavbar() {
             '</div>' +
           '</div>' +
           '<div class="user-dropdown-body">' +
-            '<div class="user-dropdown-item" onclick="showFavPanel();document.getElementById(\'userMenu\').classList.remove(\'open\')">' +
-              '<span class="dd-icon">❤️</span>我的收藏' +
-              (favCount > 0 ? '<span class="dd-badge">' + favCount + '</span>' : '') +
+            '<div class="user-dropdown-item" style="cursor:default">' +
+              '<span class="dd-icon">💰</span>积分余额: ' + credits +
             '</div>' +
-            '<div class="user-dropdown-divider"></div>' +
+            (credits < 1 ? '<div class="user-dropdown-item" onclick="toggleCsPanel();document.getElementById(\'userMenu\').classList.remove(\'open\')"><span class="dd-icon">📞</span>联系客服充值积分</div><div class="user-dropdown-divider"></div>' : '') +
             '<div class="user-dropdown-item danger" onclick="doLogout()">' +
               '<span class="dd-icon">🚪</span>退出登录' +
             '</div>' +
@@ -934,7 +965,6 @@ document.addEventListener('keydown', function(e) {
     closeAllModals();
     const menu = document.getElementById('userMenu');
     if (menu) menu.classList.remove('open');
-    closeFavPanel();
   }
   if (e.key === 'Enter') {
     if (document.getElementById('registerModal').classList.contains('open')) doRegister();
@@ -983,7 +1013,7 @@ updateNavbar();
       <button class="auth-modal-close" onclick="closeAllModals()">✕</button>
       <div class="auth-modal-icon">📝</div>
       <div class="auth-modal-title">创建账号</div>
-      <div class="auth-modal-sub">注册后即可收藏比赛、管理偏好</div>
+      <div class="auth-modal-sub">注册后即可管理偏好</div>
     </div>
     <div class="auth-modal-body">
       <div class="form-group">
@@ -1033,16 +1063,6 @@ updateNavbar();
   </div>
 </div>
 
-<!-- 收藏面板 -->
-<div class="fav-panel" id="favPanel">
-  <div class="fav-panel-header">
-    <div class="fav-panel-title">❤️ 我的收藏</div>
-    <button class="fav-panel-close" onclick="closeFavPanel()">✕</button>
-  </div>
-  <div class="fav-panel-body" id="favPanelBody">
-    <div class="fav-empty">暂无收藏比赛</div>
-  </div>
-</div>
 
 </body>
 </html>
