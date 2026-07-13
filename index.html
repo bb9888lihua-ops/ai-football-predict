@@ -368,8 +368,13 @@ function setFilter(league) {
 }
 
 function renderTeamLogo(logo, teamName) {
-  if (logo && logo.startsWith('http')) return '<img src="' + logo + '" alt="' + (teamName || '') + '" onerror="this.outerHTML=\'⚽\'">';
-  if (logo && logo.length <= 2) return logo;
+  if (!logo) return getTeamEmoji(teamName || '');
+  // base64 data URI (from desktop deploy)
+  if (logo.startsWith('data:')) return '<img src="' + logo + '" alt="' + (teamName || '') + '">';
+  // HTTP URL
+  if (logo.startsWith('http')) return '<img src="' + logo + '" alt="' + (teamName || '') + '" onerror="this.outerHTML=\'⚽\'">';
+  // Short emoji/text
+  if (logo.length <= 4) return logo;
   return getTeamEmoji(teamName || '');
 }
 
