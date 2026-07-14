@@ -455,7 +455,11 @@ function renderTeamLogo(logo, teamName) {
 }
 
 function isMatchFree(matchId) {
-  return allMatches.length > 0 && allMatches[0].id === matchId;
+  // 数据驱动：检查m.free字段，不依赖数组位置
+  for (var i = 0; i < allMatches.length; i++) {
+    if (allMatches[i].id === matchId) return !!allMatches[i].free;
+  }
+  return false;
 }
 
 function shouldShowLocked(m) {
