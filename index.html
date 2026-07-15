@@ -511,13 +511,11 @@ function renderMatchCards(matches) {
         const credits = UserDB.getCredits();
         lockOverlay = '<div class="lock-overlay" onclick="unlockMatch(\'' + m.id + '\')">' +
           '<div class="lock-icon">🔒</div>' +
-          '<div class="lock-text">付费分析内容</div>' +
           '<button class="unlock-btn" onclick="event.stopPropagation();unlockMatch(\'' + m.id + '\')">🔓 解锁 ' + credits + '积分</button>' +
         '</div>';
       } else {
         lockOverlay = '<div class="lock-overlay" onclick="showLogin()">' +
           '<div class="lock-icon">🔒</div>' +
-          '<div class="lock-text">付费分析内容</div>' +
           '<button class="unlock-btn" onclick="event.stopPropagation();showLogin()">登录后解锁</button>' +
           '<div class="lock-login-hint" onclick="event.stopPropagation();showLogin()">点击登录</div>' +
         '</div>';
