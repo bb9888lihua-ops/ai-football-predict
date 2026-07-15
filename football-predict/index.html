@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI足势 - 神灯预测模型</title>
+<meta name="description" content="AI足势 - 基于Dixon-Coles泊松分布模型的神灯预测系统，专业足球赛事数据分析">
+<meta name="theme-color" content="#0a0e17">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪔</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans SC',sans-serif;background:#0a0e17;color:#e8eaf0;min-height:100vh;overflow-x:hidden}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:#1e293b;color:#e8eaf0;padding:12px 24px;border-radius:12px;font-size:14px;z-index:10000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:#10b981}
+.toast.error{background:#ef4444}
+
+/* Hero */
+.hero{text-align:center;padding:48px 20px 24px;position:relative}
+.hero::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:120px;height:1px;background:linear-gradient(90deg,transparent,rgba(245,158,11,0.4),transparent)}
+.hero h1{font-size:32px;font-weight:800;background:linear-gradient(135deg,#f59e0b 0%,#ef4444 50%,#f59e0b 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;letter-spacing:-0.5px}
+.hero .tagline{font-size:13px;color:#7a8bb5;margin-bottom:6px;letter-spacing:1px}
+.hero .model-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:20px;padding:5px 16px;font-size:11px;color:#f59e0b;margin-top:8px}
+
+/* Container */
+.container{max-width:900px;margin:0 auto;padding:20px}
+
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.stat-card{background:linear-gradient(145deg,#141929,#0f1422);border:1px solid #1e2a4a;border-radius:12px;padding:14px 12px;text-align:center;transition:all 0.3s}
+.stat-card:hover{border-color:rgba(245,158,11,0.3);transform:translateY(-1px)}
+.stat-value{font-size:22px;font-weight:700;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:10px;color:#7a8bb5;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+
+/* League filter */
+.league-filter{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.league-filter::-webkit-scrollbar{display:none}
+.filter-btn{flex-shrink:0;padding:7px 16px;border-radius:20px;border:1px solid #1e2a4a;background:transparent;color:#7a8bb5;font-size:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.filter-btn:hover{border-color:#3a4a6a;color:#e8eaf0}
+.filter-btn.active{background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(239,68,68,0.1));border-color:rgba(245,158,11,0.4);color:#f59e0b;font-weight:600}
+.filter-count{display:inline-block;background:rgba(255,255,255,0.1);border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px}
+
+/* Match cards */
+.match-card{background:linear-gradient(145deg,#141929,#0f1422);border:1px solid #1e2a4a;border-radius:16px;padding:20px;margin-bottom:14px;transition:all 0.4s cubic-bezier(0.4,0,0.2,1);opacity:0;transform:translateY(20px);animation:cardIn 0.5s ease forwards}
+.match-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.3);border-color:rgba(245,158,11,0.15)}
+@keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+.match-card:nth-child(2){animation-delay:0.05s}
+.match-card:nth-child(3){animation-delay:0.1s}
+.match-card:nth-child(4){animation-delay:0.15s}
+.match-card:nth-child(5){animation-delay:0.2s}
+.match-card:nth-child(6){animation-delay:0.25s}
+
+.match-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.match-league{display:flex;align-items:center;gap:8px}
+.league-icon{font-size:18px}
+.league-name{font-size:12px;color:#7a8bb5;font-weight:500}
+.match-meta{display:flex;align-items:center;gap:10px}
+.match-time{font-size:11px;color:#4a5578}
+
+.match-teams{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.team{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
+.team-logo{width:52px;height:52px;border-radius:50%;background:linear-gradient(145deg,#1a2340,#151d35);border:2px solid #1e2a4a;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;transition:all 0.3s}
+.team-logo:hover{border-color:rgba(245,158,11,0.3);transform:scale(1.05)}
+.team-logo img{width:100%;height:100%;object-fit:contain}
+.team-name{font-size:13px;font-weight:600;text-align:center;max-width:100px;line-height:1.3}
+.vs-block{display:flex;flex-direction:column;align-items:center;gap:2px}
+.vs-text{font-size:16px;font-weight:700;color:#2a3555}
+
+/* Lambda prediction section */
+.match-prediction{background:linear-gradient(145deg,#0c1020,#0a0e17);border:1px solid #1a2240;border-radius:12px;padding:16px;margin-bottom:12px}
+.prediction-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.prediction-title{font-size:12px;color:#7a8bb5;display:flex;align-items:center;gap:6px}
+.prediction-content{display:flex;justify-content:space-around;text-align:center}
+.prediction-item{flex:1}
+.prediction-label{font-size:10px;color:#4a5578;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.prediction-value{font-size:20px;font-weight:700;color:#f59e0b}
+.prediction-value.blue{color:#3b82f6}
+.prediction-value.green{color:#10b981}
+
+/* Goal probability distribution */
+
+/* Recommendation badges */
+.match-recs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.rec-badge{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+.rec-badge.over{background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)}
+.rec-badge.under{background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2)}
+.rec-badge.none{background:rgba(122,139,181,0.08);color:#5a6a8a;border:1px solid rgba(122,139,181,0.12)}
+.rec-badge.mismatch{background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.2)}
+
+.match-analysis{background:linear-gradient(145deg,#0c1020,#0a0e17);border:1px solid #1a2240;border-radius:12px;padding:16px}
+.analysis-title{font-size:12px;color:#7a8bb5;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.analysis-text{font-size:13px;color:#c8cdd8;line-height:1.7}
+
+/* Model explanation section */
+.model-section{background:linear-gradient(145deg,#141929,#0f1422);border:1px solid #1e2a4a;border-radius:16px;padding:28px;margin-top:28px;margin-bottom:16px}
+.model-section-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.model-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.model-card{background:rgba(10,14,23,0.6);border:1px solid #1a2240;border-radius:12px;padding:16px;text-align:center}
+.model-card-icon{font-size:28px;margin-bottom:8px}
+.model-card-title{font-size:12px;font-weight:600;color:#e8eaf0;margin-bottom:4px}
+.model-card-desc{font-size:11px;color:#5a6a8a;line-height:1.5}
+.model-text{font-size:12px;color:#5a6a8a;line-height:1.8;border-top:1px solid #1a2240;padding-top:16px}
+.model-text strong{color:#7a8bb5}
+
+/* No matches */
+.no-matches{text-align:center;padding:80px 20px;color:#4a5578}
+.no-matches-icon{font-size:64px;margin-bottom:16px;opacity:0.4}
+.no-matches-text{font-size:14px;line-height:1.6}
+
+/* Loading skeleton */
+.skeleton-card{background:linear-gradient(145deg,#141929,#0f1422);border:1px solid #1e2a4a;border-radius:16px;padding:20px;margin-bottom:14px}
+.skeleton-line{height:12px;background:linear-gradient(90deg,#1a2240 25%,#1e2a4a 50%,#1a2240 75%);background-size:200% 100%;border-radius:6px;animation:shimmer 1.5s infinite;margin-bottom:10px}
+.skeleton-line.w60{width:60%}
+.skeleton-line.w80{width:80%}
+.skeleton-line.w40{width:40%}
+.skeleton-line.thick{height:40px;margin-bottom:14px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Footer */
+.footer{text-align:center;padding:40px 20px 30px;border-top:1px solid rgba(30,42,74,0.3);margin-top:20px}
+.footer-brand{font-size:14px;font-weight:600;margin-bottom:8px}
+.footer-brand span{background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.footer-links{display:flex;justify-content:center;gap:16px;margin-bottom:12px}
+.footer-links a{color:#4a5578;text-decoration:none;font-size:12px;transition:color 0.2s}
+.footer-links a:hover{color:#f59e0b}
+.footer-disclaimer{font-size:10px;color:#3a4560;line-height:1.6;max-width:500px;margin:0 auto}
+
+/* Responsive */
+@media(max-width:640px){
+  .hero{padding:32px 16px 20px}
+  .hero h1{font-size:26px}
+  .stats-bar{grid-template-columns:repeat(2,1fr);gap:8px}
+  .stat-card{padding:12px 8px}
+  .stat-value{font-size:18px}
+  .container{padding:14px}
+  .model-grid{grid-template-columns:1fr}
+  .summary-stats{grid-template-columns:1fr}
+  .match-card{padding:16px}
+  .team-logo{width:44px;height:44px;font-size:20px}
+  .team-name{font-size:12px;max-width:80px}
+  .prediction-value{font-size:18px}
+  .cs-panel{width:calc(100vw - 32px);right:16px;bottom:90px;max-height:60vh}
+  .cs-btn{width:50px;height:50px;bottom:20px;right:16px}
+  .cs-btn span{font-size:22px}
+}
+
+/* 客服按钮 + 弹窗 */
+.cs-btn{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;cursor:pointer;z-index:9999;box-shadow:0 4px 20px rgba(245,158,11,0.4);display:flex;align-items:center;justify-content:center;transition:transform 0.2s,box-shadow 0.2s}
+.cs-btn:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(245,158,11,0.5)}
+.cs-btn:active{transform:scale(0.95)}
+.cs-btn span{font-size:26px;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.2))}
+.cs-btn .cs-badge{position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:#10b981;border-radius:50%;border:2px solid #0a0e17}
+
+.cs-panel{position:fixed;bottom:96px;right:24px;width:360px;max-height:70vh;background:#141a29;border:1px solid rgba(255,255,255,0.08);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.5);z-index:9998;display:none;flex-direction:column;overflow:hidden;animation:csSlideUp 0.25s ease}
+.cs-panel.open{display:flex}
+@keyframes csSlideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.cs-header{padding:16px 20px;background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(239,68,68,0.08));border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
+.cs-header-left{display:flex;align-items:center;gap:10px}
+.cs-header-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;font-size:18px}
+.cs-header-title{font-size:15px;font-weight:700;color:#e8eaf0}
+.cs-header-sub{font-size:11px;color:#7a8bb5;margin-top:2px}
+.cs-close{width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:#7a8bb5;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.cs-close:hover{background:rgba(255,255,255,0.12);color:#e8eaf0}
+
+.cs-body{overflow-y:auto;padding:12px;flex:1}
+.cs-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-bottom:8px;overflow:hidden;transition:border-color 0.15s}
+.cs-item:hover{border-color:rgba(245,158,11,0.2)}
+.cs-item-q{padding:12px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;font-weight:600;color:#e8eaf0;transition:color 0.15s}
+.cs-item-q:hover{color:#f59e0b}
+.cs-item-q .cs-arrow{font-size:10px;color:#7a8bb5;transition:transform 0.2s;flex-shrink:0}
+.cs-item.open .cs-arrow{transform:rotate(180deg)}
+.cs-item-a{max-height:0;overflow:hidden;transition:max-height 0.25s ease,padding 0.25s ease;padding:0 16px;font-size:12px;line-height:1.7;color:#9aa5c0;border-top:0 solid transparent}
+.cs-item.open .cs-item-a{max-height:300px;padding:0 16px 14px;border-top:1px solid rgba(255,255,255,0.04)}
+
+.cs-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.06);text-align:center}
+.cs-footer-text{font-size:11px;color:#4a5578}
+
+/* ===== 用户注册系统 ===== */
+
+/* Navbar */
+.navbar{position:sticky;top:0;z-index:1000;background:rgba(10,14,23,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(30,42,74,0.4);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.navbar-brand{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;color:#e8eaf0;text-decoration:none}
+.navbar-brand span{background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.navbar-actions{display:flex;align-items:center;gap:10px}
+.nav-btn{padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.nav-btn-outline{background:transparent;color:#7a8bb5;border:1px solid #1e2a4a}
+.nav-btn-outline:hover{border-color:#3a4a6a;color:#e8eaf0}
+.nav-btn-primary{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff}
+.nav-btn-primary:hover{opacity:0.9;transform:translateY(-1px)}
+
+/* User avatar + dropdown */
+.user-menu{position:relative}
+.user-avatar-btn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid #1e2a4a;border-radius:10px;padding:5px 12px 5px 5px;cursor:pointer;transition:all 0.2s;color:#e8eaf0}
+.user-avatar-btn:hover{border-color:rgba(245,158,11,0.3);background:rgba(255,255,255,0.06)}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:13px;font-weight:600;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-arrow{font-size:9px;color:#7a8bb5;transition:transform 0.2s}
+.user-menu.open .user-arrow{transform:rotate(180deg)}
+
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:260px;background:#141a29;border:1px solid rgba(255,255,255,0.08);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,0.5);z-index:1001;display:none;overflow:hidden;animation:dropdownIn 0.2s ease}
+.user-menu.open .user-dropdown{display:block}
+@keyframes dropdownIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+.user-dropdown-header{padding:16px;background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(239,68,68,0.06));border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px}
+.user-dropdown-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0}
+.user-dropdown-info{flex:1;min-width:0}
+.user-dropdown-name{font-size:14px;font-weight:700;color:#e8eaf0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-dropdown-phone{font-size:11px;color:#7a8bb5;margin-top:2px}
+
+.user-dropdown-body{padding:8px}
+.user-dropdown-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;font-size:13px;color:#c8cdd8}
+.user-dropdown-item:hover{background:rgba(255,255,255,0.04);color:#f59e0b}
+.user-dropdown-item .dd-icon{font-size:16px;width:20px;text-align:center}
+.user-dropdown-item .dd-badge{margin-left:auto;background:rgba(245,158,11,0.15);color:#f59e0b;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px}
+.user-dropdown-divider{height:1px;background:rgba(255,255,255,0.06);margin:4px 8px}
+.user-dropdown-item.danger{color:#ef4444}
+.user-dropdown-item.danger:hover{background:rgba(239,68,68,0.08)}
+
+/* Auth Modals */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;animation:modalFadeIn 0.2s ease}
+.modal-overlay.open{display:flex}
+@keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
+
+.auth-modal{background:#141a29;border:1px solid rgba(255,255,255,0.08);border-radius:20px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:modalSlideIn 0.25s ease;overflow:hidden}
+@keyframes modalSlideIn{from{opacity:0;transform:translateY(20px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+.auth-modal-header{padding:24px 28px 16px;text-align:center;position:relative}
+.auth-modal-close{position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:#7a8bb5;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.auth-modal-close:hover{background:rgba(255,255,255,0.12);color:#e8eaf0}
+.auth-modal-icon{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(239,68,68,0.1));border:1px solid rgba(245,158,11,0.2);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px}
+.auth-modal-title{font-size:20px;font-weight:700;color:#e8eaf0;margin-bottom:4px}
+.auth-modal-sub{font-size:12px;color:#7a8bb5}
+
+.auth-modal-body{padding:8px 28px 28px}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:600;color:#7a8bb5;margin-bottom:6px}
+.form-input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.04);border:1px solid #1e2a4a;border-radius:10px;color:#e8eaf0;font-size:14px;transition:all 0.2s;outline:none}
+.form-input:focus{border-color:rgba(245,158,11,0.4);background:rgba(255,255,255,0.06);box-shadow:0 0 0 3px rgba(245,158,11,0.08)}
+.form-input::placeholder{color:#4a5578}
+.form-hint{font-size:11px;color:#4a5578;margin-top:4px}
+
+.auth-submit{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:6px}
+.auth-submit:hover{opacity:0.9;transform:translateY(-1px)}
+.auth-submit:active{transform:translateY(0)}
+.auth-submit:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+.auth-switch{text-align:center;margin-top:16px;font-size:13px;color:#7a8bb5}
+.auth-switch a{color:#f59e0b;cursor:pointer;font-weight:600;text-decoration:none}
+.auth-switch a:hover{text-decoration:underline}
+
+/* ===== 积分解锁系统 ===== */
+
+/* 锁定遮罩层 */
+.lock-overlay{position:absolute;inset:0;background:rgba(10,14,23,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;z-index:5;cursor:pointer;transition:opacity 0.3s}
+.lock-overlay:hover{background:rgba(10,14,23,0.72)}
+.lock-overlay .lock-icon{font-size:2rem;margin-bottom:8px}
+.lock-overlay .lock-text{color:#94a3b8;font-size:0.85rem;margin-bottom:12px;text-align:center;line-height:1.5}
+.lock-overlay .unlock-btn{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none;padding:8px 22px;border-radius:20px;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(245,158,11,0.3)}
+.lock-overlay .unlock-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,158,11,0.4)}
+.lock-overlay .lock-login-hint{color:#7a8bb5;font-size:0.75rem;margin-top:8px;text-decoration:underline;cursor:pointer}
+
+/* 已解锁标签 */
+.unlocked-badge{position:absolute;top:12px;right:48px;background:rgba(16,185,129,0.15);color:#10b981;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;z-index:6;border:1px solid rgba(16,185,129,0.2)}
+
+/* 积分显示 */
+.credits-display{display:flex;align-items:center;gap:4px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:16px;padding:3px 10px;font-size:12px;font-weight:600;color:#f59e0b}
+.credits-display.zero{color:#ef4444;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.2)}
+
+.match-card{position:relative}
+
+@media(max-width:640px){
+  .navbar{padding:0 14px;height:48px}
+  .navbar-brand{font-size:14px}
+  .nav-btn{padding:10px 16px;font-size:13px;min-height:40px}
+  .user-dropdown{width:calc(100vw - 28px);right:-14px}
+  .auth-modal{max-width:100%;margin:0 12px}
+  .auth-modal-body{padding:8px 20px 24px}
+  .auth-modal-header{padding:20px 20px 14px}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="#" class="navbar-brand">🪔 <span>AI足势</span></a>
+  <div class="navbar-actions" id="navbarActions">
+    <!-- 未登录时显示 -->
+    <button class="nav-btn nav-btn-outline" onclick="showLogin()">登录</button>
+    <button class="nav-btn nav-btn-primary" onclick="showRegister()">注册</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <h1>🪔 AI足势</h1>
+  <div class="tagline">智能足球赛事预测系统</div>
+  <div class="model-badge">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    Dixon-Coles 泊松分布模型 · 数据驱动分析
+  </div>
+</div>
+
+<div class="container">
+  <!-- Stats bar -->
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <div class="stat-card"><div class="stat-value" id="stat-total">-</div><div class="stat-label">今日赛事</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-over">-</div><div class="stat-label">进球趋势</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-mismatch">-</div><div class="stat-label">实力差</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-avg">-</div><div class="stat-label">场均进球</div></div>
+  </div>
+
+  <!-- League filter -->
+  <div class="league-filter" id="leagueFilter" style="display:none"></div>
+
+  <!-- Match cards -->
+  <div id="matchCards">
+    <div class="skeleton-card"><div class="skeleton-line thick"></div><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
+    <div class="skeleton-card"><div class="skeleton-line thick"></div><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
+    <div class="skeleton-card"><div class="skeleton-line thick"></div><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
+  </div>
+
+  <!-- Model explanation -->
+  <div class="model-section" id="model-section">
+    <div class="model-section-title">📐 模型原理</div>
+    <div class="model-grid">
+      <div class="model-card">
+        <div class="model-card-icon">📊</div>
+        <div class="model-card-title">Dixon-Coles 模型</div>
+        <div class="model-card-desc">基于1994年发表的经典泊松回归框架，综合考虑球队攻防实力与主场优势</div>
+      </div>
+      <div class="model-card">
+        <div class="model-card-icon">λ</div>
+        <div class="model-card-title">泊松分布预测</div>
+        <div class="model-card-desc">通过λ参数精确计算每支球队的期望进球数，进而推算比分概率</div>
+      </div>
+      <div class="model-card">
+        <div class="model-card-icon">🎯</div>
+        <div class="model-card-title">近期状态加权</div>
+        <div class="model-card-desc">最近10场比赛数据加权分析，捕捉球队实时竞技状态与趋势变化</div>
+      </div>
+    </div>
+    <div class="model-text">
+      <strong>如何使用本系统：</strong>系统基于两支球队近10场比赛的进球与失球数据，通过Dixon-Coles模型分别计算出主队和客队的期望进球值（λ主/λ客）。λ值越高代表该队预期进球越多。总进球值为两队λ之和，结合2.5球阈值分析进球趋势。所有预测均为概率模型输出，仅供数据分析参考。
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-brand">🪔 <span>AI足势</span></div>
+  <div class="footer-links">
+    <a href="#">首页</a>
+    <a href="#model-section">模型说明</a>
+    <a href="admin.html">管理后台</a>
+  </div>
+  <div class="footer-disclaimer">
+    本系统基于Dixon-Coles泊松分布模型，所有预测结果仅供数据分析参考，不构成任何投注建议。请理性看待数据，遵守当地法律法规。<br>
+    Powered by 神灯预测引擎 © 2026
+  </div>
+</div>
+
+<script>
+// Team emoji mapping
+const teamEmojis = {
+  '北京国安':'🟢','上海海港':'🔵','山东泰山':'🟠','广州队':'🔴',
+  '成都蓉城':'🟣','浙江队':'🔷','武汉三镇':'🟤','长春亚泰':'⚪',
+  '天津津门虎':'🟡','河南队':'🟤','深圳队':'🔵','大连人':'⚫',
+  '曼城':'🩵','阿森纳':'🔴','利物浦':'🔴','切尔西':'🔵',
+  '曼联':'🔴','热刺':'⚪','纽卡斯尔':'⚫','布莱顿':'🔵',
+  '皇马':'⚪','巴萨':'🔵','马竞':'🔴','拜仁':'🔴',
+  '巴黎':'🔵','国米':'🔵','AC米兰':'🔴','尤文':'⚪',
+  '多特':'🟡','勒沃库森':'🔴','那不勒斯':'🔵',
+};
+
+function getTeamEmoji(team) {
+  for (const [key, emoji] of Object.entries(teamEmojis)) {
+    if (team.includes(key) || key.includes(team)) return emoji;
+  }
+  return '⚽';
+}
+
+function getLeagueIcon(league) {
+  const icons = {
+    '中超':'🇨🇳','英超':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','西甲':'🇪🇸','德甲':'🇩🇪',
+    '意甲':'🇮🇹','法甲':'🇫🇷','欧冠':'🏆','欧联':'🏆',
+    '韩K':'🇰🇷','日职':'🇯🇵','瑞典':'🇸🇪','挪威':'🇳🇴',
+    '芬超':'🇫🇮','冰岛':'🇮🇸',
+  };
+  for (const [key, icon] of Object.entries(icons)) {
+    if (league.includes(key)) return icon;
+  }
+  return '⚽';
+}
+
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+function renderOverUnder(rec) {
+  if (!rec) return '';
+  if (rec.includes('大')) return '<span class="rec-badge over">⚽ 进球多</span>';
+  if (rec.includes('小')) return '<span class="rec-badge under">⚽ 进球少</span>';
+  return '';
+}
+
+function renderMismatch(rec) {
+  if (!rec) return '';
+  // 去掉⚠️感叹号
+  var clean = rec.replace(/⚠️/g, '').replace(/️/g, '').trim();
+  return `<span class="rec-badge mismatch">💪 ${clean}</span>`;
+}
+
+// League filter state
+let activeFilter = 'all';
+let allMatches = [];
+
+function renderLeagueFilter(matches) {
+  const leagues = {};
+  matches.forEach(m => {
+    const l = m.league || '其他';
+    leagues[l] = (leagues[l] || 0) + 1;
+  });
+  const sorted = Object.entries(leagues).sort((a, b) => b[1] - a[1]);
+  const el = document.getElementById('leagueFilter');
+  if (sorted.length <= 1) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = '<button class="filter-btn ' + (activeFilter === 'all' ? 'active' : '') + '" onclick="setFilter(\'all\')">全部<span class="filter-count">' + matches.length + '</span></button>' +
+    sorted.map(function(entry) {
+      return '<button class="filter-btn ' + (activeFilter === entry[0] ? 'active' : '') + '" onclick="setFilter(\'' + entry[0] + '\')">' + entry[0] + '<span class="filter-count">' + entry[1] + '</span></button>';
+    }).join('');
+}
+
+function setFilter(league) {
+  activeFilter = league;
+  renderLeagueFilter(allMatches);
+  renderMatchCards(allMatches);
+}
+
+function renderTeamLogo(logo, teamName) {
+  if (!logo) return getTeamEmoji(teamName || '');
+  // base64 data URI (from desktop deploy)
+  if (logo.startsWith('data:')) return '<img src="' + logo + '" alt="' + (teamName || '') + '">';
+  // HTTP URL
+  if (logo.startsWith('http')) return '<img src="' + logo + '" alt="' + (teamName || '') + '" onerror="this.outerHTML=\'⚽\'">';
+  // Short emoji/text
+  if (logo.length <= 4) return logo;
+  return getTeamEmoji(teamName || '');
+}
+
+function isMatchFree(matchId) {
+  // 优先使用数据中的 free 字段
+  for (var i = 0; i < allMatches.length; i++) {
+    if (allMatches[i].id === matchId) {
+      if (typeof allMatches[i].free !== 'undefined') return !!allMatches[i].free;
+      break;
+    }
+  }
+  // 兼容：如果数据中没有 free 字段，第一场免费
+  var hasFreeField = allMatches.some(function(m) { return typeof m.free !== 'undefined'; });
+  if (!hasFreeField && allMatches.length > 0 && allMatches[0].id === matchId) return true;
+  return false;
+}
+
+function shouldShowLocked(m) {
+  if (isMatchFree(m.id)) return false;
+  if (!UserDB.getSession()) return true;
+  return !UserDB.isUnlocked(m.id);
+}
+
+function renderMatchCards(matches) {
+  const container = document.getElementById('matchCards');
+  const filtered = activeFilter === 'all' ? matches : matches.filter(function(m) { return (m.league || '其他') === activeFilter; });
+
+  if (!filtered || filtered.length === 0) {
+    container.innerHTML = '<div class="no-matches"><div class="no-matches-icon">⚽</div><div class="no-matches-text">暂无赛事数据<br>请等待系统更新预测</div></div>';
+    return;
+  }
+
+  const isLoggedIn = !!UserDB.getSession();
+
+  container.innerHTML = filtered.map(function(m, idx) {
+    const homeEmoji = renderTeamLogo(m.homeTeamLogo, m.homeTeam);
+    const awayEmoji = renderTeamLogo(m.awayTeamLogo, m.awayTeam);
+    const leagueIcon = m.leagueIcon || getLeagueIcon(m.league || '');
+
+    const lambdaHome = m.lambdaHome || '--';
+    const lambdaAway = m.lambdaAway || '--';
+    const totalGoals = m.totalGoals || (m.lambdaHome && m.lambdaAway ? (parseFloat(m.lambdaHome) + parseFloat(m.lambdaAway)).toFixed(2) : '--');
+
+    const locked = shouldShowLocked(m);
+
+    // 已解锁标签
+    let statusBadge = '';
+    if (isLoggedIn && UserDB.isUnlocked(m.id)) {
+      statusBadge = '<div class="unlocked-badge">✅ 已解锁</div>';
+    }
+
+    // 锁定遮罩层
+    let lockOverlay = '';
+    if (locked) {
+      if (isLoggedIn) {
+        const credits = UserDB.getCredits();
+        lockOverlay = '<div class="lock-overlay" onclick="unlockMatch(\'' + m.id + '\')">' +
+          '<div class="lock-icon">🔒</div>' +
+          '<div class="lock-text">付费分析内容</div>' +
+          '<button class="unlock-btn" onclick="event.stopPropagation();unlockMatch(\'' + m.id + '\')">🔓 解锁 ' + credits + '积分</button>' +
+        '</div>';
+      } else {
+        lockOverlay = '<div class="lock-overlay" onclick="showLogin()">' +
+          '<div class="lock-icon">🔒</div>' +
+          '<div class="lock-text">付费分析内容</div>' +
+          '<button class="unlock-btn" onclick="event.stopPropagation();showLogin()">登录后解锁</button>' +
+          '<div class="lock-login-hint" onclick="event.stopPropagation();showLogin()">点击登录</div>' +
+        '</div>';
+      }
+    }
+
+    return '<div class="match-card" style="animation-delay:' + (idx * 0.05) + 's">' + statusBadge +
+      '<div class="match-header">' +
+        '<div class="match-league">' +
+          '<span class="league-icon">' + leagueIcon + '</span>' +
+          '<span class="league-name">' + (m.league || '足球赛事') + '</span>' +
+        '</div>' +
+        '<div class="match-meta">' +
+          '<span class="match-time">' + (m.date || '') + ' ' + (m.time || '') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="match-teams">' +
+        '<div class="team">' +
+          '<div class="team-logo">' + homeEmoji + '</div>' +
+          '<div class="team-name">' + (m.homeTeam || '主队') + '</div>' +
+        '</div>' +
+        '<div class="vs-block">' +
+          '<div class="vs-text">VS</div>' +
+        '</div>' +
+        '<div class="team">' +
+          '<div class="team-logo">' + awayEmoji + '</div>' +
+          '<div class="team-name">' + (m.awayTeam || '客队') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="lockable-content" style="position:relative">' +
+      '<div class="match-prediction">' +
+        '<div class="prediction-header">' +
+          '<span class="prediction-title">🪔 神灯预测</span>' +
+        '</div>' +
+        '<div class="prediction-content">' +
+          '<div class="prediction-item">' +
+            '<div class="prediction-label">λ 主队</div>' +
+            '<div class="prediction-value">' + lambdaHome + '</div>' +
+          '</div>' +
+          '<div class="prediction-item">' +
+            '<div class="prediction-label">λ 客队</div>' +
+            '<div class="prediction-value blue">' + lambdaAway + '</div>' +
+          '</div>' +
+          '<div class="prediction-item">' +
+            '<div class="prediction-label">总进球</div>' +
+            '<div class="prediction-value green">' + totalGoals + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="match-recs">' +
+        (function() {
+          var ou = renderOverUnder(m.overUnder);
+          var mm = renderMismatch(m.mismatch);
+          if (!ou && !mm) return '<span class="rec-badge none">不建议</span>';
+          return ou + mm;
+        })() +
+      '</div>' +
+      (m.analysis ? '<div class="match-analysis"><div class="analysis-title">🔑 关键看点</div><div class="analysis-text">' + m.analysis + '</div></div>' : '') +
+      lockOverlay +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderMatches(matches) {
+  allMatches = matches;
+
+  if (!matches || matches.length === 0) {
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('leagueFilter').style.display = 'none';
+    renderMatchCards([]);
+    return;
+  }
+
+  // Update stats
+  document.getElementById('statsBar').style.display = 'grid';
+  document.getElementById('stat-total').textContent = matches.length;
+  const overCount = matches.filter(function(m) {
+    const r = (m.overUnder || '').toLowerCase();
+    return r.includes('大') || r.includes('小');
+  }).length;
+  document.getElementById('stat-over').textContent = overCount;
+  const mismatchCount = matches.filter(function(m) { return m.mismatch && m.mismatch.length > 0; }).length;
+  document.getElementById('stat-mismatch').textContent = mismatchCount;
+  const avgGoals = matches.reduce(function(s, m) {
+    const tg = m.totalGoals || (m.lambdaHome && m.lambdaAway ? (parseFloat(m.lambdaHome) + parseFloat(m.lambdaAway)) : 0);
+    return s + tg;
+  }, 0) / matches.length;
+  document.getElementById('stat-avg').textContent = avgGoals.toFixed(1);
+
+  // Render filter + cards
+  activeFilter = 'all';
+  renderLeagueFilter(matches);
+  renderMatchCards(matches);
+
+}
+
+async function loadMatches() {
+  try {
+    const resp = await fetch('data/matches.json?t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    renderMatches(data);
+  } catch (err) {
+    console.error('加载赛事失败:', err);
+    document.getElementById('matchCards').innerHTML =
+      '<div class="no-matches"><div class="no-matches-icon">⚠️</div><div class="no-matches-text">数据加载失败<br>请稍后刷新重试</div></div>';
+  }
+}
+
+// Init
+loadMatches();
+setInterval(loadMatches, 5 * 60 * 1000);
+
+// ========== 自定义客服面板 ==========
+// ★★★ 在这里修改你的客服回复内容 ★★★
+var csReplies = [
+  {
+    q: '🪔 预测模型是什么？',
+    a: '我们使用 Dixon-Coles 泊松分布模型，基于每支球队近10场比赛的攻防数据，计算进球期望值（λ），综合得出大小球和赛事走势预测。'
+  },
+  {
+    q: '📊 预测准确率如何？',
+    a: '模型大小球方向命中率稳定在 60%-65% 左右。所有预测仅供参考，不构成任何建议。'
+  },
+  {
+    q: '🕐 每天什么时候更新？',
+    a: '每天北京时间 11:40 左右自动采集数据并更新当日预测，请留意网站刷新。'
+  },
+  {
+    q: '💡 λ 值是什么意思？',
+    a: 'λ（lambda）是泊松分布的核心参数，代表预期进球数。λ 主队=主队预期进球，λ 客队=客队预期进球，两者相加=总进球预期。'
+  },
+  {
+    q: '🤝 合作 / 反馈',
+    a: '如有合作需求或使用反馈，请通过我们的官方渠道联系客服，我们会尽快回复。'
+  }
+];
+
+function renderCsPanel() {
+  var html = '<div class="cs-item">';
+  csReplies.forEach(function(r, i) {
+    html += '<div class="cs-item-q" onclick="toggleCsItem(this)">' +
+      '<span>' + r.q + '</span>' +
+      '<span class="cs-arrow">▼</span>' +
+    '</div>' +
+    '<div class="cs-item-a">' + r.a + '</div>';
+  });
+  html += '</div>';
+  document.getElementById('csBody').innerHTML = html;
+}
+
+function toggleCsItem(el) {
+  el.parentElement.classList.toggle('open');
+}
+
+function toggleCsPanel() {
+  var panel = document.getElementById('csPanel');
+  panel.classList.toggle('open');
+}
+
+function closeCsPanel() {
+  document.getElementById('csPanel').classList.remove('open');
+}
+
+// renderCsPanel 在 DOM 加载后调用
+document.addEventListener('DOMContentLoaded', renderCsPanel);
+
+// ========== 用户注册系统 ==========
+
+const UserDB = {
+  USERS_KEY: 'aifushi_users',
+  SESSION_KEY: 'aifushi_session',
+
+  async hashPassword(pwd) {
+    const data = new TextEncoder().encode(pwd + 'ai_football_salt');
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  },
+
+  _getUsers() {
+    try { return JSON.parse(localStorage.getItem(this.USERS_KEY)) || {}; }
+    catch { return {}; }
+  },
+
+  _saveUsers(users) {
+    localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+  },
+
+  async register(username, password, phone) {
+    const users = this._getUsers();
+    const uname = username.trim();
+    if (uname.length < 2) return { ok: false, msg: '用户名至少2个字符' };
+    if (password.length < 6) return { ok: false, msg: '密码至少6位' };
+    if (users[uname]) return { ok: false, msg: '用户名已存在' };
+    if (phone && phone.trim()) {
+      for (const u of Object.values(users)) {
+        if (u.phone === phone.trim()) return { ok: false, msg: '该手机号已注册' };
+      }
+    }
+    const pwd_hash = await this.hashPassword(password);
+    users[uname] = {
+      pwd_hash,
+      phone: phone ? phone.trim() : '',
+      createdAt: new Date().toISOString(),
+      credits: 0,
+      unlocked: []
+    };
+    this._saveUsers(users);
+    return { ok: true };
+  },
+
+  async login(usernameOrPhone, password) {
+    const users = this._getUsers();
+    const account = usernameOrPhone.trim();
+    let found = null;
+    if (users[account]) {
+      found = account;
+    } else {
+      for (const [uname, u] of Object.entries(users)) {
+        if (u.phone && u.phone === account) { found = uname; break; }
+      }
+    }
+    if (!found) return { ok: false, msg: '账号不存在' };
+    const pwd_hash = await this.hashPassword(password);
+    if (users[found].pwd_hash !== pwd_hash) return { ok: false, msg: '密码错误' };
+    localStorage.setItem(this.SESSION_KEY, JSON.stringify({ username: found, loginAt: new Date().toISOString() }));
+    return { ok: true, username: found };
+  },
+
+  logout() {
+    localStorage.removeItem(this.SESSION_KEY);
+  },
+
+  getSession() {
+    try { return JSON.parse(localStorage.getItem(this.SESSION_KEY)); }
+    catch { return null; }
+  },
+
+  getUserData() {
+    const session = this.getSession();
+    if (!session) return null;
+    const users = this._getUsers();
+    return users[session.username] || null;
+  },
+
+  // ===== 积分解锁系统 =====
+
+  getCredits() {
+    const data = this.getUserData();
+    return (data && typeof data.credits === 'number') ? data.credits : 0;
+  },
+
+  isUnlocked(matchId) {
+    const data = this.getUserData();
+    if (!data || !data.unlocked) return false;
+    return data.unlocked.includes(matchId);
+  },
+
+  unlockMatch(matchId) {
+    const session = this.getSession();
+    if (!session) return { ok: false, msg: '请先登录' };
+    const users = this._getUsers();
+    const user = users[session.username];
+    if (!user) return { ok: false, msg: '用户不存在' };
+    if (!user.unlocked) user.unlocked = [];
+    if (user.unlocked.includes(matchId)) return { ok: true, msg: '已解锁' };
+    if (!user.credits || user.credits < 1) return { ok: false, msg: '积分不足，请联系官方客服充值' };
+    user.credits -= 1;
+    user.unlocked.push(matchId);
+    this._saveUsers(users);
+    return { ok: true };
+  },
+
+  addCredits(username, amount) {
+    const users = this._getUsers();
+    if (!users[username]) return false;
+    users[username].credits = (users[username].credits || 0) + amount;
+    this._saveUsers(users);
+    return true;
+  }
+};
+
+// ===== UI Functions =====
+
+function showRegister() {
+  closeAllModals();
+  document.getElementById('registerModal').classList.add('open');
+}
+
+function showLogin() {
+  closeAllModals();
+  document.getElementById('loginModal').classList.add('open');
+}
+
+function closeAllModals() {
+  document.getElementById('registerModal').classList.remove('open');
+  document.getElementById('loginModal').classList.remove('open');
+}
+
+function switchToLogin() {
+  closeAllModals();
+  setTimeout(showLogin, 150);
+}
+
+function switchToRegister() {
+  closeAllModals();
+  setTimeout(showRegister, 150);
+}
+
+async function doRegister() {
+  const username = document.getElementById('regUsername').value;
+  const password = document.getElementById('regPassword').value;
+  const confirm = document.getElementById('regConfirm').value;
+  const phone = document.getElementById('regPhone').value;
+  const btn = document.getElementById('regSubmitBtn');
+
+  if (!username.trim()) return showToast('请输入用户名', 'error');
+  if (username.trim().length < 2) return showToast('用户名至少2个字符', 'error');
+  if (!password) return showToast('请输入密码', 'error');
+  if (password.length < 6) return showToast('密码至少6位', 'error');
+  if (password !== confirm) return showToast('两次密码不一致', 'error');
+
+  btn.disabled = true;
+  btn.textContent = '注册中...';
+  try {
+    const result = await UserDB.register(username, password, phone);
+    if (!result.ok) { showToast(result.msg, 'error'); btn.disabled = false; btn.textContent = '注 册'; return; }
+    showToast('注册成功！', 'success');
+    closeAllModals();
+    await UserDB.login(username, password);
+    updateNavbar();
+    renderMatchCards(allMatches);
+    document.getElementById('regUsername').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('regConfirm').value = '';
+    document.getElementById('regPhone').value = '';
+  } catch (e) {
+    showToast('注册失败，请重试', 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '注 册';
+}
+
+async function doLogin() {
+  const account = document.getElementById('loginAccount').value;
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginSubmitBtn');
+
+  if (!account.trim()) return showToast('请输入用户名或手机号', 'error');
+  if (!password) return showToast('请输入密码', 'error');
+
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+  try {
+    const result = await UserDB.login(account, password);
+    if (!result.ok) { showToast(result.msg, 'error'); btn.disabled = false; btn.textContent = '登 录'; return; }
+    showToast('登录成功！', 'success');
+    closeAllModals();
+    updateNavbar();
+    renderMatchCards(allMatches);
+    document.getElementById('loginAccount').value = '';
+    document.getElementById('loginPassword').value = '';
+  } catch (e) {
+    showToast('登录失败，请重试', 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '登 录';
+}
+
+function doLogout() {
+  UserDB.logout();
+  showToast('已退出登录', 'success');
+  const dd = document.getElementById('userDropdown');
+  if (dd) dd.parentElement.classList.remove('open');
+  updateNavbar();
+  renderMatchCards(allMatches);
+}
+
+function toggleUserPanel() {
+  const menu = document.querySelector('.user-menu');
+  if (menu) menu.classList.toggle('open');
+}
+
+function unlockMatch(matchId) {
+  if (!UserDB.getSession()) {
+    showToast('请先登录后再解锁', 'error');
+    showLogin();
+    return;
+  }
+  if (UserDB.isUnlocked(matchId)) {
+    showToast('该比赛已解锁', 'info');
+    return;
+  }
+  const credits = UserDB.getCredits();
+  if (credits < 1) {
+    showToast('积分不足，请联系官方客服充值', 'error');
+    return;
+  }
+  const result = UserDB.unlockMatch(matchId);
+  if (result.ok) {
+    showToast('🔓 解锁成功！积分-1', 'success');
+    updateNavbar();
+    renderMatchCards(allMatches);
+  } else {
+    showToast(result.msg || '解锁失败', 'error');
+  }
+}
+
+function updateNavbar() {
+  const actions = document.getElementById('navbarActions');
+  const session = UserDB.getSession();
+  if (session) {
+    const data = UserDB.getUserData();
+    if (!data) { actions.innerHTML = '<button class="nav-btn nav-btn-outline" onclick="showLogin()">登录</button><button class="nav-btn nav-btn-primary" onclick="showRegister()">注册</button>'; return; }
+    const initial = session.username.charAt(0).toUpperCase();
+    const credits = UserDB.getCredits();
+    const creditsClass = credits > 0 ? 'credits-display' : 'credits-display zero';
+    const phoneDisplay = data.phone ? data.phone : '';
+    actions.innerHTML =
+      '<div class="user-menu" id="userMenu">' +
+        '<div class="user-avatar-btn" onclick="toggleUserPanel()">' +
+          '<div class="user-avatar">' + initial + '</div>' +
+          '<span class="user-name">' + session.username + '</span>' +
+          '<span class="' + creditsClass + '">💰 ' + credits + '</span>' +
+          '<span class="user-arrow">▼</span>' +
+        '</div>' +
+        '<div class="user-dropdown" id="userDropdown">' +
+          '<div class="user-dropdown-header">' +
+            '<div class="user-dropdown-avatar">' + initial + '</div>' +
+            '<div class="user-dropdown-info">' +
+              '<div class="user-dropdown-name">' + session.username + '</div>' +
+              (phoneDisplay ? '<div class="user-dropdown-phone">' + phoneDisplay + '</div>' : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="user-dropdown-body">' +
+            '<div class="user-dropdown-item" style="cursor:default">' +
+              '<span class="dd-icon">💰</span>积分余额: ' + credits +
+            '</div>' +
+            (credits < 1 ? '<div class="user-dropdown-item" onclick="toggleCsPanel();document.getElementById(\'userMenu\').classList.remove(\'open\')"><span class="dd-icon">📞</span>联系客服充值积分</div><div class="user-dropdown-divider"></div>' : '') +
+            '<div class="user-dropdown-item danger" onclick="doLogout()">' +
+              '<span class="dd-icon">🚪</span>退出登录' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  } else {
+    actions.innerHTML = '<button class="nav-btn nav-btn-outline" onclick="showLogin()">登录</button><button class="nav-btn nav-btn-primary" onclick="showRegister()">注册</button>';
+  }
+}
+
+// Keyboard events
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeAllModals();
+    const menu = document.getElementById('userMenu');
+    if (menu) menu.classList.remove('open');
+  }
+  if (e.key === 'Enter') {
+    if (document.getElementById('registerModal').classList.contains('open')) doRegister();
+    else if (document.getElementById('loginModal').classList.contains('open')) doLogin();
+  }
+});
+
+// Click outside to close dropdown
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('userMenu');
+  if (menu && !menu.contains(e.target)) menu.classList.remove('open');
+});
+
+// Init auth on page load
+updateNavbar();
+</script>
+
+<!-- 客服弹窗 -->
+<div id="csPanel" class="cs-panel">
+  <div class="cs-header">
+    <div class="cs-header-left">
+      <div class="cs-header-icon">🪔</div>
+      <div>
+        <div class="cs-header-title">AI足势 · 帮助中心</div>
+        <div class="cs-header-sub">点击问题查看回复</div>
+      </div>
+    </div>
+    <button class="cs-close" onclick="closeCsPanel()">✕</button>
+  </div>
+  <div class="cs-body" id="csBody"></div>
+  <div class="cs-footer">
+    <div class="cs-footer-text">AI足势 · 神灯预测模型 · 仅供参考</div>
+  </div>
+</div>
+
+<!-- 客服按钮 -->
+<button class="cs-btn" onclick="toggleCsPanel()" title="帮助中心">
+  <span>💬</span>
+  <div class="cs-badge"></div>
+</button>
+
+<!-- 注册弹窗 -->
+<div class="modal-overlay" id="registerModal">
+  <div class="auth-modal">
+    <div class="auth-modal-header">
+      <button class="auth-modal-close" onclick="closeAllModals()">✕</button>
+      <div class="auth-modal-icon">📝</div>
+      <div class="auth-modal-title">创建账号</div>
+      <div class="auth-modal-sub">注册后即可管理偏好</div>
+    </div>
+    <div class="auth-modal-body">
+      <div class="form-group">
+        <label class="form-label">用户名</label>
+        <input class="form-input" id="regUsername" type="text" placeholder="请输入用户名" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">密码</label>
+        <input class="form-input" id="regPassword" type="password" placeholder="请输入密码（至少6位）" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">确认密码</label>
+        <input class="form-input" id="regConfirm" type="password" placeholder="再次输入密码" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">手机号 <span style="color:#4a5578">（选填）</span></label>
+        <input class="form-input" id="regPhone" type="tel" placeholder="用于快捷登录">
+        <div class="form-hint">手机号可用于登录，不会对外展示</div>
+      </div>
+      <button class="auth-submit" id="regSubmitBtn" onclick="doRegister()">注 册</button>
+      <div class="auth-switch">已有账号？<a onclick="switchToLogin()">立即登录</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- 登录弹窗 -->
+<div class="modal-overlay" id="loginModal">
+  <div class="auth-modal">
+    <div class="auth-modal-header">
+      <button class="auth-modal-close" onclick="closeAllModals()">✕</button>
+      <div class="auth-modal-icon">🪔</div>
+      <div class="auth-modal-title">欢迎回来</div>
+      <div class="auth-modal-sub">登录你的AI足势账号</div>
+    </div>
+    <div class="auth-modal-body">
+      <div class="form-group">
+        <label class="form-label">用户名 / 手机号</label>
+        <input class="form-input" id="loginAccount" type="text" placeholder="请输入用户名或手机号" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">密码</label>
+        <input class="form-input" id="loginPassword" type="password" placeholder="请输入密码" autocomplete="current-password">
+      </div>
+      <button class="auth-submit" id="loginSubmitBtn" onclick="doLogin()">登 录</button>
+      <div class="auth-switch">没有账号？<a onclick="switchToRegister()">立即注册</a></div>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>
