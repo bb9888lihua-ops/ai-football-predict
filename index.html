@@ -406,15 +406,17 @@ function showToast(msg, type='info') {
 }
 
 function renderOverUnder(rec) {
-  if (!rec) return '<span class="rec-badge none">不建议</span>';
+  if (!rec) return '';
   if (rec.includes('大')) return '<span class="rec-badge over">⚽ 进球多</span>';
   if (rec.includes('小')) return '<span class="rec-badge under">⚽ 进球少</span>';
-  return '<span class="rec-badge none">不建议</span>';
+  return '';
 }
 
 function renderMismatch(rec) {
   if (!rec) return '';
-  return `<span class="rec-badge mismatch">💪 ${rec}</span>`;
+  // 去掉️感叹号
+  var clean = rec.replace(/⚠️/g, '').replace(/️/g, '').trim();
+  return `<span class="rec-badge mismatch">💪 ${clean}</span>`;
 }
 
 // League filter state
@@ -566,8 +568,12 @@ function renderMatchCards(matches) {
         '</div>' +
       '</div>' +
       '<div class="match-recs">' +
-        renderOverUnder(m.overUnder) +
-        renderMismatch(m.mismatch) +
+        (function() {
+          var ou = renderOverUnder(m.overUnder);
+          var mm = renderMismatch(m.mismatch);
+          if (!ou && !mm) return '<span class="rec-badge none">不建议</span>';
+          return ou + mm;
+        })() +
       '</div>' +
       (m.analysis ? '<div class="match-analysis"><div class="analysis-title">🔑 关键看点</div><div class="analysis-text">' + m.analysis + '</div></div>' : '') +
       lockOverlay +
