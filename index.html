@@ -185,7 +185,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 .navbar-brand{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;color:#e8eaf0;text-decoration:none}
 .navbar-brand span{background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .navbar-actions{display:flex;align-items:center;gap:10px}
-.nav-btn{padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none}
+.nav-btn{padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .nav-btn-outline{background:transparent;color:#7a8bb5;border:1px solid #1e2a4a}
 .nav-btn-outline:hover{border-color:#3a4a6a;color:#e8eaf0}
 .nav-btn-primary{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff}
@@ -274,7 +274,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 @media(max-width:640px){
   .navbar{padding:0 14px;height:48px}
   .navbar-brand{font-size:14px}
-  .nav-btn{padding:6px 12px;font-size:12px}
+  .nav-btn{padding:10px 16px;font-size:13px;min-height:40px}
   .user-dropdown{width:calc(100vw - 28px);right:-14px}
   .auth-modal{max-width:100%;margin:0 12px}
   .auth-modal-body{padding:8px 20px 24px}
@@ -407,14 +407,14 @@ function showToast(msg, type='info') {
 
 function renderOverUnder(rec) {
   if (!rec) return '<span class="rec-badge none">不建议</span>';
-  if (rec.includes('大')) return '<span class="rec-badge over">🔥 进球多</span>';
-  if (rec.includes('小')) return '<span class="rec-badge under">🔥 进球少</span>';
+  if (rec.includes('大')) return '<span class="rec-badge over">⚽ 进球多</span>';
+  if (rec.includes('小')) return '<span class="rec-badge under">⚽ 进球少</span>';
   return '<span class="rec-badge none">不建议</span>';
 }
 
 function renderMismatch(rec) {
   if (!rec) return '';
-  return `<span class="rec-badge mismatch">⚠️ ${rec}</span>`;
+  return `<span class="rec-badge mismatch">💪 ${rec}</span>`;
 }
 
 // League filter state
@@ -455,10 +455,16 @@ function renderTeamLogo(logo, teamName) {
 }
 
 function isMatchFree(matchId) {
-  // 数据驱动：检查m.free字段，不依赖数组位置
+  // 优先使用数据中的 free 字段
   for (var i = 0; i < allMatches.length; i++) {
-    if (allMatches[i].id === matchId) return !!allMatches[i].free;
+    if (allMatches[i].id === matchId) {
+      if (typeof allMatches[i].free !== 'undefined') return !!allMatches[i].free;
+      break;
+    }
   }
+  // 兼容：如果数据中没有 free 字段，第一场免费
+  var hasFreeField = allMatches.some(function(m) { return typeof m.free !== 'undefined'; });
+  if (!hasFreeField && allMatches.length > 0 && allMatches[0].id === matchId) return true;
   return false;
 }
 
